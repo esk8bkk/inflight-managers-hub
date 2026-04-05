@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1028">
+<title>PA Announcements · IM Hub</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" type="image/svg+xml" href="../../icons/icon.svg">
+<link rel="apple-touch-icon" href="../../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  /* Plugin-specific: flight badge & static PA blocks */
+  .flight-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, rgba(74,20,140,0.08), rgba(201,168,76,0.08));
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 10px;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  .flight-badge .route {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--tg-purple);
+  }
+  .flight-badge .detail { color: var(--text-muted); }
+
+  .cs-status { margin-top: 6px; font-size: 11px; }
+  .cs-status .auto {
+    color: var(--tg-green);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+  }
+  .cs-status .auto::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--tg-green);
+  }
+  .cs-status .manual { color: var(--tg-amber); font-weight: 600; }
+
+  /* Static PA content blocks */
+  .pa-body {
+    background: var(--input-bg);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 10px 0 14px;
+    font-family: 'Noto Sans Thai', 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+  .pa-lang-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .pa-lang-label:not(:first-child) { margin-top: 14px; }
+  .pa-divider {
+    border: none;
+    border-top: 1px dashed var(--border-strong);
+    margin: 12px 0;
+  }
+
+  .copy-row {
+    display: flex;
+    gap: 8px;
+  }
+  .copy-row .btn { margin-top: 0; padding: 11px 14px; font-size: 13px; }
+
+  .sub-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .sub-nav .section-btn { flex: 1; padding: 11px 10px; font-size: 12px; }
+
+  .sub-panel { display: none; }
+  .sub-panel.active { display: block; animation: fadeIn 0.3s var(--ease); }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <a href="../../" class="back-btn">← Hub</a>
+  <div class="logo">📢 Plugin 1</div>
+  <h1>PA Announcements</h1>
+  <div class="sub">Welcome · Thank You · Refuel · Short Connect</div>
+</header>
+
+<div class="container">
+
+  <!-- Section Nav -->
+  <div class="section-nav">
+    <button class="section-btn active" data-section="welcome-proc">1 · Welcome Proc</button>
+    <button class="section-btn" data-section="welcome-ann">2 · Welcome</button>
+    <button class="section-btn" data-section="thankyou">3 · Thank You</button>
+    <button class="section-btn" data-section="others">4 · อื่นๆ</button>
+  </div>
+
+  <!-- ========== 1: WELCOME PROCEDURE ========== -->
+  <div id="panel-welcome-proc" class="section-panel active">
+    <div class="card">
+      <h2>Welcome Procedure</h2>
+      <div class="card-sub">PAH 1 · Page 3 — static script</div>
+
+      <div class="pa-lang-label">🇹🇭 ภาษาไทย</div>
+      <div class="pa-body" id="wp-th">สวัสดีครับ
+
+การบินไทยยินดีต้อนรับผู้โดยสารทุกท่านบนเที่ยวบินนี้
+ขอบคุณที่เลือกเดินทางกับการบินไทย
+ขณะนี้เราพร้อมที่จะออกเดินทาง เพื่อความปลอดภัย โปรดให้ความสนใจชมวิดีโอสาธิตความปลอดภัยบนเครื่องบิน
+
+ขอบคุณครับ</div>
+
+      <div class="pa-lang-label">🇬🇧 English</div>
+      <div class="pa-body" id="wp-en">Welcome on board Thai Airways. We are delighted to be your airline of choice. We are now ready to depart. For your safety, please take a moment to watch the safety video.
+
+Thank you.</div>
+
+      <div class="copy-row">
+        <button class="btn btn-ghost" data-copy-ids="wp-th">🇹🇭 Copy</button>
+        <button class="btn btn-ghost" data-copy-ids="wp-en">🇬🇧 Copy</button>
+        <button class="btn btn-primary" data-copy-ids="wp-th,wp-en">All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 2: WELCOME ANNOUNCEMENT (generator) ========== -->
+  <div id="panel-welcome-ann" class="section-panel">
+    <div class="card">
+      <div class="card-title">Flight</div>
+      <div class="fg">
+        <label>Flight Number</label>
+        <input type="text" id="flightInput" class="mono center" placeholder="TG910" maxlength="7" autocomplete="off" inputmode="text">
+      </div>
+      <div id="flightInfo" class="hidden"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Crew & Flight time</div>
+      <div class="fg">
+        <label>กัปตัน / Captain</label>
+        <input type="text" id="captainInput" placeholder="ชื่อกัปตัน">
+      </div>
+      <div class="fg">
+        <label>หัวหน้าพนักงานต้อนรับ / Zone Supervisor</label>
+        <input type="text" id="zsInput" placeholder="ชื่อ ZS">
+      </div>
+      <div class="fg">
+        <label>Codeshare</label>
+        <input type="text" id="codeshareInput" placeholder="สายการบิน codeshare">
+        <div class="cs-status" id="codeshareStatus"></div>
+      </div>
+      <div class="fg">
+        <label>เวลาบิน / Flight time</label>
+        <div class="row">
+          <div class="fg"><input type="number" id="hoursInput" class="mono center" placeholder="ชม." min="0" max="20" inputmode="numeric"></div>
+          <div class="fg"><input type="number" id="minutesInput" class="mono center" placeholder="นาที" min="0" max="59" inputmode="numeric"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnGenerate">สร้างคำประกาศ / Generate</button>
+    </div>
+
+    <div id="outputArea" class="output-area">
+      <div class="output-card">
+        <div class="output-tab-bar">
+          <div class="output-tab active" data-tab="th">🇹🇭 ไทย</div>
+          <div class="output-tab" data-tab="en">🇬🇧 English</div>
+          <div class="output-tab" data-tab="both">ทั้งหมด</div>
+        </div>
+        <div id="outputContent" class="output-content"></div>
+        <div class="divider"></div>
+        <div class="copy-row">
+          <button class="btn btn-ghost" id="copyTh">🇹🇭 Copy</button>
+          <button class="btn btn-ghost" id="copyEn">🇬🇧 Copy</button>
+          <button class="btn btn-primary" id="copyBoth">All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 3: THANK YOU ========== -->
+  <div id="panel-thankyou" class="section-panel">
+    <div class="card">
+      <h2>Thank You Procedure</h2>
+      <div class="card-sub">PAH 3 · Page 60 — static script</div>
+
+      <div class="pa-lang-label">🇹🇭 ภาษาไทย</div>
+      <div class="pa-body" id="ty-th">ท่านผู้โดยสารครับ
+
+ทุกช่วงเวลาที่ท่านเดินทางกับการบินไทย มีความหมายกับเราเสมอ
+เราขอขอบคุณจากใจ ขอบคุณที่เลือกเดินทางกับการบินไทยครับ</div>
+
+      <div class="pa-lang-label">🇬🇧 English</div>
+      <div class="pa-body" id="ty-en">Dear Passengers,
+
+Your every moment on board with THAI is meaningful to us.
+Thank you for flying THAI.</div>
+
+      <div class="copy-row">
+        <button class="btn btn-ghost" data-copy-ids="ty-th">🇹🇭 Copy</button>
+        <button class="btn btn-ghost" data-copy-ids="ty-en">🇬🇧 Copy</button>
+        <button class="btn btn-primary" data-copy-ids="ty-th,ty-en">All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 4: OTHERS ========== -->
+  <div id="panel-others" class="section-panel">
+    <div class="sub-nav">
+      <button class="section-btn active" data-sub="refuel">⛽ Refueling</button>
+      <button class="section-btn" data-sub="shortconnect">🔗 Short Connect</button>
+    </div>
+
+    <!-- 4.1 Refueling -->
+    <div id="sub-refuel" class="sub-panel active">
+      <div class="card">
+        <h2>Refueling with PAX on Board</h2>
+        <div class="card-sub">Static script</div>
+
+        <div class="pa-lang-label">🇹🇭 ภาษาไทย</div>
+        <div class="pa-body" id="rf-th">ท่านผู้โดยสารครับ
+
+เพื่อความปลอดภัย ในขณะเติมน้ำมัน กรุณานั่งประจำที่ ปลดเข็มขัดที่นั่ง งดสูบบุหรี่ งดใช้ห้องน้ำ และงดใช้อุปกรณ์อิเล็กทรอนิกส์ทุกชนิด
+
+ขอบคุณครับ</div>
+
+        <div class="pa-lang-label">🇬🇧 English</div>
+        <div class="pa-body" id="rf-en">Ladies and Gentlemen,
+
+For safety reasons, while the aircraft is being refueled, please remain seated, release seat belt, refrain from smoking or using the lavatories. All electronic devices must be turned off.
+
+Thank you.</div>
+
+        <div class="copy-row">
+          <button class="btn btn-ghost" data-copy-ids="rf-th">🇹🇭 Copy</button>
+          <button class="btn btn-ghost" data-copy-ids="rf-en">🇬🇧 Copy</button>
+          <button class="btn btn-primary" data-copy-ids="rf-th,rf-en">All</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4.2 Short Connect -->
+    <div id="sub-shortconnect" class="sub-panel">
+      <div class="card">
+        <h2>Short Connect Passengers</h2>
+        <div class="card-sub">Enter destination + connecting airline</div>
+
+        <div class="fg">
+          <label>ปลายทาง / Destination</label>
+          <input type="text" id="scDestTh" placeholder="เมือง เช่น ลอนดอน">
+        </div>
+        <div class="fg">
+          <label>สายการบิน / Airline</label>
+          <input type="text" id="scAirlineTh" placeholder="เช่น Turkish Airlines">
+        </div>
+        <button class="btn btn-primary" id="btnGenerateSC">สร้างคำประกาศ Short Connect</button>
+
+        <div id="sc-output" style="display:none;margin-top:14px;">
+          <div class="pa-lang-label">🇹🇭 ภาษาไทย</div>
+          <div class="pa-body" id="sc-th"></div>
+
+          <div class="pa-lang-label">🇬🇧 English</div>
+          <div class="pa-body" id="sc-en"></div>
+
+          <div class="copy-row" id="sc-copy-row">
+            <button class="btn btn-ghost" data-copy-ids="sc-th">🇹🇭 Copy</button>
+            <button class="btn btn-ghost" data-copy-ids="sc-en">🇬🇧 Copy</button>
+            <button class="btn btn-primary" data-copy-ids="sc-th,sc-en">All</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { CODESHARE, AIRPORTS, FLIGHTS } from './data.js';
+  import { FlightContext } from '../../shared/flight-context.js';
+  import { copyText, registerSW } from '../../shared/ui.js';
+
+  registerSW('../../sw.js', '../../');
+  const $ = id => document.getElementById(id);
+
+  // ===== STATE =====
+  let currentTab = 'th';
+  let paData = { th: '', en: '' };
+
+  // ===== SECTION NAV =====
+  document.querySelectorAll('.section-nav .section-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.section;
+      document.querySelectorAll('.section-nav .section-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+      $('panel-' + id).classList.add('active');
+    });
+  });
+
+  // ===== SUB NAV (Others) =====
+  document.querySelectorAll('.sub-nav .section-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.sub;
+      document.querySelectorAll('.sub-nav .section-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+      $('sub-' + id).classList.add('active');
+    });
+  });
+
+  // ===== GREETING =====
+  function getGreeting(dep) {
+    if (!dep) return { en: 'Evening', th: 'สวัสดี' };
+    const h = parseInt(dep.substring(0, 2));
+    if (h < 12) return { en: 'Morning', th: 'สวัสดี' };
+    if (h < 18) return { en: 'Afternoon', th: 'สวัสดี' };
+    return { en: 'Evening', th: 'สวัสดี' };
+  }
+
+  // ===== FLIGHT INPUT AUTO-LOOKUP =====
+  $('flightInput').addEventListener('input', function () {
+    let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v && !v.startsWith('TG')) v = 'TG' + v.replace(/^TG/, '');
+    this.value = v;
+
+    const info = $('flightInfo');
+    const csInput = $('codeshareInput');
+    const csStatus = $('codeshareStatus');
+
+    if (v.length >= 5) {
+      const fl = FLIGHTS[v];
+      const cs = CODESHARE[v];
+      if (fl) {
+        const ap = AIRPORTS[fl.dest] || {};
+        info.className = 'flight-badge';
+        info.innerHTML = `<span class="route">${v} → ${fl.dest}</span><span class="detail">${ap.city_en || fl.dest} · ${fl.h}h ${fl.m}m</span>`;
+        $('hoursInput').value = fl.h;
+        $('minutesInput').value = fl.m;
+      } else {
+        info.className = 'hidden';
+      }
+      if (cs) {
+        csInput.value = cs;
+        csStatus.innerHTML = '<span class="auto">Auto-filled from Route Spec</span>';
+      } else {
+        csInput.value = '';
+        csStatus.innerHTML = '<span class="manual">⚠️ ไม่พบ codeshare — กรอกเองหรือเว้นว่าง</span>';
+      }
+    } else {
+      info.className = 'hidden';
+      csStatus.innerHTML = '';
+    }
+
+    // Sync to shared context (including fields we auto-filled)
+    FlightContext.patch({
+      flightNo: v,
+      codeshare: csInput.value.trim(),
+      flightTime: {
+        h: parseInt($('hoursInput').value) || null,
+        m: parseInt($('minutesInput').value) || null,
+      },
+    });
+  });
+
+  // ===== SHARED CONTEXT BINDING (2-way) =====
+  const ctx = FlightContext.load();
+  if (ctx.flightNo) { $('flightInput').value = ctx.flightNo; $('flightInput').dispatchEvent(new Event('input')); }
+  if (ctx.pic) $('captainInput').value = ctx.pic;
+  if (ctx.zs) $('zsInput').value = ctx.zs;
+  if (ctx.codeshare) $('codeshareInput').value = ctx.codeshare;
+  if (ctx.flightTime && ctx.flightTime.h != null) $('hoursInput').value = ctx.flightTime.h;
+  if (ctx.flightTime && ctx.flightTime.m != null) $('minutesInput').value = ctx.flightTime.m;
+
+  $('captainInput').addEventListener('input', (e) => FlightContext.patch({ pic: e.target.value.trim() }));
+  $('zsInput').addEventListener('input', (e) => FlightContext.patch({ zs: e.target.value.trim() }));
+  $('codeshareInput').addEventListener('input', (e) => FlightContext.patch({ codeshare: e.target.value.trim() }));
+  $('hoursInput').addEventListener('input', (e) => FlightContext.patch({ flightTime: { h: parseInt(e.target.value) || null } }));
+  $('minutesInput').addEventListener('input', (e) => FlightContext.patch({ flightTime: { m: parseInt(e.target.value) || null } }));
+
+  // ===== GENERATE WELCOME ANNOUNCEMENT =====
+  function generate() {
+    const flight = $('flightInput').value.toUpperCase();
+    const captain = $('captainInput').value.trim();
+    const zs = $('zsInput').value.trim();
+    const codeshare = $('codeshareInput').value.trim();
+    const hours = $('hoursInput').value;
+    const minutes = $('minutesInput').value;
+
+    if (!flight || !captain || !zs) {
+      alert('กรุณากรอก: เลขเที่ยวบิน, กัปตัน, หัวหน้าพนักงานต้อนรับ');
+      return;
+    }
+
+    const num = flight.replace('TG', '');
+    const fl = FLIGHTS[flight] || {};
+    const ap = AIRPORTS[fl.dest] || {};
+    const h = hours || fl.h || '?';
+    const m = minutes || fl.m || '?';
+    const greeting = getGreeting(fl.dep);
+    const cityTh = ap.city_th || fl.dest || '___';
+    const cityEn = ap.city_en || fl.dest || '___';
+    const apTh = ap.th || '___';
+    const apEn = ap.en || '___';
+    const csText = codeshare || '………';
+
+    paData.th = `ท่านผู้โดยสารครับ
+
+การบินไทย สายการบินสมาชิก Star Alliance ร่วมกับสายการบิน ${csText}
+
+กัปตัน ${captain} หัวหน้าพนักงานต้อนรับ ${zs} ผู้จัดการเที่ยวบิน ชยานนท์ และลูกเรือทุกคน มีความยินดีต้อนรับท่านสู่บริการเอื้องหลวง เที่ยวบิน TG ${num} นำท่านไปยัง${cityTh} โดยจะใช้เวลาบินไปยัง${apTh} ${h} ชั่วโมง ${m} นาที
+
+ขอเรียนให้ทราบว่าการบินไทยเป็นสายการบินปลอดบุหรี่ เราขอสงวนสิทธิ์ที่จะระงับการบริการเครื่องดื่มแอลกอฮอล์แก่ผู้ที่มีอายุต่ำกว่า 18 ปี หรือผู้ที่มีอาการมึนเมา และไม่อนุญาตให้ท่านนำเครื่องดื่มแอลกอฮอล์มาดื่มเองในระหว่างเที่ยวบิน
+
+⛔ เช็คก่อน: มี Duty Free on board หรือไม่? — ไม่มี→ข้ามย่อหน้านี้
+
+สำหรับผู้ที่มีความประสงค์จะซื้อสินค้าปลอดภาษี ท่านจะพบรายการสินค้าพร้อมใบสั่งซื้อในกระเป๋าหน้าที่นั่ง หากท่านประสงค์จะซื้อสินค้า กรุณาติดต่อลูกเรือ เราจะหยุดการจำหน่ายสินค้า 45 นาทีก่อนเครื่องลงครับ
+
+เราหวังเป็นอย่างยิ่งว่าท่านจะได้รับความสะดวกสบายตลอดเที่ยวบินนี้ และอีกสักครู่เราจะตรวจความเรียบร้อยภายในห้องโดยสาร เพื่อความปลอดภัยกรุณาปฏิบัติตามคำแนะนำของลูกเรือ โทรศัพท์มือถือและอุปกรณ์อิเล็กทรอนิกส์รับส่งสัญญาณ กรุณาเปลี่ยนเป็นไฟลท์โหมดหรือปิดอุปกรณ์ดังกล่าว การบินไทยไม่อนุญาตให้ผู้โดยสารใช้หรือชาร์จ Power Banks ตลอดระยะเวลาการบินครับ
+
+ขอบคุณครับ`;
+
+    paData.en = `Good ${greeting.en},
+Ladies and Gentlemen,
+
+Welcome aboard Thai Airways International, a member of Star Alliance, together with ${csText}
+
+Captain ${captain}, Zone Supervisor ${zs}, Crew In Charge Chayanonth and the crew would like to welcome you on board our Royal Orchid Service Flight TG ${num} bound for ${cityEn}. The flight time to ${apEn} will be ${h} hour(s) and ${m} minutes.
+
+Please be informed that Thai Airways is a non-smoking airline. We will not serve alcohol to passengers under the age of 18 or those who appear intoxicated. The consumption of your own alcoholic beverages is not permitted.
+
+⛔ CHECK: Duty Free on board? If NO → Skip this paragraph
+
+You will find a copy of our Duty Free catalogue with the order form in the seat pocket. If you would like to make a purchase, please contact our cabin crew. Sales will be closed 45 minutes before landing.
+
+We wish you a pleasant flight.
+
+And in a few minutes, we will perform a final safety check. Please follow the safety instructions given by our cabin crew. All mobile phones and transmitting portable electronic devices must be set to flight mode or turn off at this time. Passengers are not allowed to use or charge Power Banks during the entire flight.
+
+Thank you.`;
+
+    switchTab(currentTab);
+    $('outputArea').classList.add('show');
+    $('outputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.output-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+    const content = $('outputContent');
+    if (tab === 'th') content.textContent = paData.th;
+    else if (tab === 'en') content.textContent = paData.en;
+    else content.textContent = paData.th + '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' + paData.en;
+  }
+
+  $('btnGenerate').addEventListener('click', generate);
+  document.querySelectorAll('.output-tab').forEach(el => el.addEventListener('click', () => switchTab(el.dataset.tab)));
+  $('copyTh').addEventListener('click', () => copyText(paData.th));
+  $('copyEn').addEventListener('click', () => copyText(paData.en));
+  $('copyBoth').addEventListener('click', () => copyText(paData.th + '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' + paData.en));
+
+  // ===== SHORT CONNECT =====
+  $('btnGenerateSC').addEventListener('click', () => {
+    const dest = $('scDestTh').value.trim();
+    const airline = $('scAirlineTh').value.trim();
+    if (!dest || !airline) {
+      alert('กรุณากรอก: ปลายทาง และ สายการบิน');
+      return;
+    }
+    $('sc-th').textContent = `ท่านผู้โดยสารครับ
+ท่านที่จะเดินทางต่อไปยัง${dest} โดยสายการบิน ${airline}
+
+• กรุณาเตรียมพร้อมที่จะลงจากเครื่อง ที่ประตูทางออกด้านหน้า และขอความกรุณาผู้โดยสารท่านอื่นนั่งอยู่กับที่ก่อน เพื่ออำนวยความสะดวกสำหรับผู้โดยสารที่จะต่อเครื่อง
+
+• กรุณาติดต่อเจ้าหน้าที่ภาคพื้นที่ประตูทางออกทันทีที่ลงจากเครื่องบิน
+
+ขอบคุณครับ`;
+    $('sc-en').textContent = `Ladies and Gentlemen,
+
+Passengers with a connecting flight to ${dest} with ${airline} Airlines,
+
+• Please be ready to disembark at the forward exit. All other passengers are asked to remain seated in order to facilitate the transfer of these passengers.
+
+• Please identify yourself to the ground staff at the gate after disembarkation.
+
+Thank you.`;
+    $('sc-output').style.display = 'block';
+    $('sc-output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // ===== COPY STATIC BLOCKS =====
+  document.querySelectorAll('[data-copy-ids]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ids = btn.dataset.copyIds.split(',');
+      const parts = ids.map(id => $(id).textContent.trim());
+      const text = parts.join('\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
+      copyText(text);
+    });
+  });
+</script>
+
+</body>
+</html>

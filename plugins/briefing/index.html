@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1028">
+<title>Cabin Briefing · IM Hub</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" type="image/svg+xml" href="../../icons/icon.svg">
+<link rel="apple-touch-icon" href="../../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .info-box {
+    background: var(--input-bg);
+    border-left: 3px solid var(--tg-purple);
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .info-box strong { color: var(--tg-purple); }
+
+  .badge-red {
+    background: rgba(198, 40, 40, 0.12);
+    color: var(--tg-red);
+    border: 1px solid rgba(198, 40, 40, 0.3);
+  }
+  .badge-green-full {
+    background: rgba(46, 125, 50, 0.12);
+    color: var(--tg-green);
+    border: 1px solid rgba(46, 125, 50, 0.3);
+  }
+  .badge-aircraft {
+    background: rgba(74, 20, 140, 0.1);
+    color: var(--tg-purple);
+    border: 1px solid rgba(74, 20, 140, 0.25);
+  }
+  .badge-sector {
+    background: rgba(201, 168, 76, 0.1);
+    color: #8a6f1f;
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <a href="../../" class="back-btn">← Hub</a>
+  <div class="logo">📋 Plugin 2</div>
+  <h1>Cabin Briefing</h1>
+  <div class="sub">Full pre-flight sheet — auto-syncs with other plugins</div>
+</header>
+
+<div class="container">
+
+  <!-- FLIGHT & DATE -->
+  <div class="card">
+    <div class="card-title">Flight</div>
+    <div class="row">
+      <div class="fg">
+        <label>Flight No.</label>
+        <input type="text" id="flt" class="mono center" placeholder="TG910" maxlength="7" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label>Date</label>
+        <input type="date" id="fdate">
+      </div>
+    </div>
+    <div id="autoInfo"></div>
+  </div>
+
+  <!-- FLIGHT DECK -->
+  <div class="card">
+    <div class="card-title">Flight Deck</div>
+    <div class="fg">
+      <label>Captain (PIC)</label>
+      <input type="text" id="pic" placeholder="Name / Nickname">
+    </div>
+    <div class="row">
+      <div class="fg">
+        <label>F/O 1</label>
+        <input type="text" id="fo1" placeholder="Name / Nickname">
+      </div>
+      <div class="fg">
+        <label>F/O 2</label>
+        <input type="text" id="fo2" placeholder="Name / Nickname">
+      </div>
+    </div>
+  </div>
+
+  <!-- FLIGHT DETAILS -->
+  <div class="card">
+    <div class="card-title">Flight Details</div>
+    <div class="row">
+      <div class="fg">
+        <label>Exp. Flight Time</label>
+        <input type="text" id="ftime" class="mono" placeholder="11h 45m">
+      </div>
+      <div class="fg">
+        <label>Taxi Time</label>
+        <input type="text" id="taxi" class="mono" placeholder="20 min">
+      </div>
+    </div>
+    <div class="fg">
+      <label>Exp. Weather</label>
+      <input type="text" id="wx" placeholder="Clear / Turb">
+    </div>
+    <div class="fg">
+      <label>Security Procedure</label>
+      <input type="text" id="security" placeholder="Normal / Enhanced">
+    </div>
+    <div class="fg">
+      <label>Special Instructions</label>
+      <textarea id="special" placeholder="VIP, Special handling, etc."></textarea>
+    </div>
+    <div class="fg">
+      <label>No. of Loaded Luggages</label>
+      <input type="text" id="luggage" class="mono" placeholder="0">
+    </div>
+  </div>
+
+  <!-- GENDEC & SPRAY -->
+  <div class="card" id="gendecCard" style="display:none;">
+    <div class="card-title">GenDec & Spray</div>
+    <div id="gendecSpray"></div>
+  </div>
+
+  <!-- MEALS -->
+  <div class="card">
+    <div class="card-title">Meals</div>
+    <div class="row">
+      <div class="fg"><label>C Meal</label><input type="text" id="mealC" class="mono" placeholder="0"></div>
+      <div class="fg"><label>C SPML</label><input type="text" id="spmlC" class="mono" placeholder="0"></div>
+      <div class="fg"><label>C Total</label><input type="text" id="mealCT" class="mono" readonly></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Y Meal</label><input type="text" id="mealY" class="mono" placeholder="0"></div>
+      <div class="fg"><label>Y SPML</label><input type="text" id="spmlY" class="mono" placeholder="0"></div>
+      <div class="fg"><label>Y Total</label><input type="text" id="mealYT" class="mono" readonly></div>
+    </div>
+  </div>
+
+  <!-- BLANKETS -->
+  <div class="card">
+    <div class="card-title">Blankets</div>
+    <div class="row">
+      <div class="fg"><label>C Class</label><input type="text" id="blkC" class="mono" placeholder="0"></div>
+      <div class="fg"><label>Y Class</label><input type="text" id="blkY" class="mono" placeholder="0"></div>
+      <div class="fg"><label>Total</label><input type="text" id="blkT" class="mono" readonly></div>
+    </div>
+  </div>
+
+  <!-- PAX -->
+  <div class="card">
+    <div class="card-title">Passengers</div>
+    <div class="row">
+      <div class="fg"><label>C Class</label><input type="text" id="paxC" class="mono" placeholder="0"></div>
+      <div class="fg"><label>Y Class</label><input type="text" id="paxY" class="mono" placeholder="0"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Infant</label><input type="text" id="paxInf" class="mono" placeholder="0"></div>
+      <div class="fg"><label>Total PAX</label><input type="text" id="paxT" class="mono" readonly></div>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="card">
+    <div class="card-title">Preview</div>
+    <div class="preview briefing-preview" id="preview"></div>
+    <div class="mt-2"></div>
+    <button class="btn btn-primary" id="copyBtn">📋 Copy to Clipboard</button>
+    <button class="btn btn-danger" id="clearBtn">Clear All</button>
+  </div>
+
+</div>
+
+<script type="module">
+  import { D } from './data.js';
+  import { FlightContext } from '../../shared/flight-context.js';
+  import { copyText, registerSW } from '../../shared/ui.js';
+
+  registerSW('../../sw.js', '../../');
+  const $ = id => document.getElementById(id);
+  const gv = id => ($(id).value || '').trim();
+  const esc = (s) => { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+  // ===== INIT DATE =====
+  $('fdate').valueAsDate = new Date();
+
+  // ===== FLIGHT INPUT AUTO-FORMAT + LOOKUP =====
+  $('flt').addEventListener('input', function () {
+    let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v && !v.startsWith('TG')) v = 'TG' + v.replace(/^TG/, '');
+    this.value = v;
+    autoFill(v);
+    FlightContext.patch({ flightNo: v });
+  });
+
+  function autoFill(flight) {
+    const infoEl = $('autoInfo');
+    const gsEl = $('gendecSpray');
+    const gsCard = $('gendecCard');
+    const d = D[flight];
+    if (!d) { infoEl.innerHTML = ''; gsEl.innerHTML = ''; gsCard.style.display = 'none'; updatePreview(); return; }
+
+    // Aircraft + sectors badges
+    let h = '<div class="badge-row">';
+    h += `<div class="badge badge-aircraft">${d.aircraft}</div>`;
+    const sectors = d.sectors || [];
+    for (let i = 0; i < sectors.length; i++) {
+      const bt = (d.block_times || {})[sectors[i]] || '';
+      if (bt) h += `<div class="badge badge-sector">${sectors[i]} ${bt}</div>`;
+    }
+    h += '</div>';
+
+    const utcParts = [];
+    for (const k in (d.utc || {})) utcParts.push(k + ' UTC' + d.utc[k]);
+    if (utcParts.length) h += `<div class="info-box">${utcParts.join(' → ')}</div>`;
+    infoEl.innerHTML = h;
+
+    // Auto-fill flight time from first sector
+    if (sectors.length && (d.block_times || {})[sectors[0]]) {
+      $('ftime').value = d.block_times[sectors[0]];
+    }
+
+    // GenDec + Spray
+    let gs = '';
+    if (d.spray) {
+      if (d.spray.required) {
+        gs += '<div class="badge-row"><div class="badge badge-red">🔴 SPRAY REQUIRED</div></div>';
+        gs += '<div class="info-box">';
+        if (d.spray.cabin_cans) gs += `<strong>Cabin:</strong> ${d.spray.cabin_cans} cans<br>`;
+        if (d.spray.cargo_cans) gs += `<strong>Cargo:</strong> ${d.spray.cargo_cans} cans<br>`;
+        if (d.spray.cabin_spray) gs += esc(d.spray.cabin_spray) + '<br>';
+        if (d.spray.details && !d.spray.cabin_cans) gs += esc(d.spray.details);
+        gs += '</div>';
+      } else {
+        gs += '<div class="badge-row"><div class="badge badge-green-full">🟢 NO SPRAY</div></div>';
+      }
+    }
+    if (d.gendec) {
+      if (d.gendec.required === true) {
+        gs += `<div class="badge-row"><div class="badge badge-red">📋 GENDEC ${d.gendec.copies ? d.gendec.copies + ' copies' : 'REQUIRED'}</div></div>`;
+        if (d.gendec.details) gs += `<div class="info-box">${esc(d.gendec.details)}</div>`;
+      } else if (d.gendec.required === false) {
+        gs += '<div class="badge-row"><div class="badge badge-green-full">📋 NO GENDEC</div></div>';
+        if (d.gendec.details) gs += `<div class="info-box">${esc(d.gendec.details)}</div>`;
+      } else {
+        gs += '<div class="badge-row"><div class="badge badge-gold">📋 GENDEC — N/A</div></div>';
+      }
+    }
+    gsEl.innerHTML = gs;
+    gsCard.style.display = gs ? 'block' : 'none';
+
+    updatePreview();
+  }
+
+  // ===== CALC TOTALS =====
+  function calcTotals() {
+    const sum = (a, b) => (parseInt($(a).value) || 0) + (parseInt($(b).value) || 0);
+    $('mealCT').value = sum('mealC', 'spmlC') || '';
+    $('mealYT').value = sum('mealY', 'spmlY') || '';
+    $('blkT').value = sum('blkC', 'blkY') || '';
+    const pc = parseInt($('paxC').value) || 0;
+    const py = parseInt($('paxY').value) || 0;
+    const pi = parseInt($('paxInf').value) || 0;
+    $('paxT').value = (pc + py + pi) || '';
+  }
+
+  // ===== PREVIEW =====
+  function updatePreview() {
+    const flt = gv('flt');
+    const d = D[flt] || {};
+    const sectors = d.sectors || [];
+
+    let t = '';
+    t += '✈️ CABIN BRIEFING\n';
+    t += '━━━━━━━━━━━━━━━━━━━━\n';
+    t += flt;
+    if (gv('fdate')) {
+      const dt = new Date(gv('fdate'));
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      t += ' | ' + dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + dt.getFullYear();
+    }
+    if (d.aircraft) t += ' | ' + d.aircraft;
+    t += '\n';
+    if (sectors.length) {
+      for (let i = 0; i < sectors.length; i++) {
+        const bt = d.block_times ? d.block_times[sectors[i]] : '';
+        t += sectors[i];
+        if (bt) t += ' (' + bt + ')';
+        if (i < sectors.length - 1) t += ' / ';
+      }
+      t += '\n';
+    }
+    t += '\n';
+
+    t += '👨‍✈️ FLIGHT DECK\n';
+    if (gv('pic')) t += '  PIC: ' + gv('pic') + '\n';
+    if (gv('fo1')) t += '  F/O: ' + gv('fo1') + '\n';
+    if (gv('fo2')) t += '  F/O: ' + gv('fo2') + '\n';
+    t += '\n';
+
+    t += '📋 FLIGHT DETAILS\n';
+    if (gv('ftime')) t += '  Flight Time: ' + gv('ftime') + '\n';
+    if (gv('taxi')) t += '  Taxi Time: ' + gv('taxi') + '\n';
+    if (gv('wx')) t += '  Weather: ' + gv('wx') + '\n';
+    if (gv('security')) t += '  Security: ' + gv('security') + '\n';
+    if (gv('luggage')) t += '  Luggages: ' + gv('luggage') + '\n';
+    if (gv('special')) t += '  Special: ' + gv('special') + '\n';
+    t += '\n';
+
+    if (d.gendec || d.spray) {
+      t += '📌 GENDEC & SPRAY\n';
+      if (d.spray) {
+        if (d.spray.required) {
+          t += '  🔴 SPRAY: REQUIRED';
+          if (d.spray.cabin_cans) t += ' (Cabin ' + d.spray.cabin_cans + ' / Cargo ' + (d.spray.cargo_cans || 0) + ')';
+          t += '\n';
+        } else t += '  🟢 SPRAY: Not required\n';
+      }
+      if (d.gendec) {
+        if (d.gendec.required === true) {
+          t += '  🔴 GENDEC: REQUIRED';
+          if (d.gendec.copies) t += ' (' + d.gendec.copies + ' copies)';
+          t += '\n';
+        } else if (d.gendec.required === false) t += '  🟢 GENDEC: Not required\n';
+        else t += '  ⚪ GENDEC: N/A\n';
+      }
+      t += '\n';
+    }
+
+    const mc = gv('mealC'), sc = gv('spmlC'), my = gv('mealY'), sy = gv('spmlY');
+    if (mc || sc || my || sy) {
+      t += '🍽️ MEALS\n';
+      const mct = (parseInt(mc) || 0) + (parseInt(sc) || 0);
+      const myt = (parseInt(my) || 0) + (parseInt(sy) || 0);
+      if (mc || sc) t += '  C: ' + mc + ' meal' + (sc ? ' + ' + sc + ' SPML' : '') + ' = ' + mct + '\n';
+      if (my || sy) t += '  Y: ' + my + ' meal' + (sy ? ' + ' + sy + ' SPML' : '') + ' = ' + myt + '\n';
+      t += '\n';
+    }
+
+    const bc = gv('blkC'), by = gv('blkY');
+    if (bc || by) {
+      t += '🛏️ BLANKETS\n';
+      const bt2 = (parseInt(bc) || 0) + (parseInt(by) || 0);
+      t += '  C: ' + bc + ' / Y: ' + by + ' / Total: ' + bt2 + '\n';
+      t += '\n';
+    }
+
+    const pc = gv('paxC'), py = gv('paxY'), pi = gv('paxInf');
+    if (pc || py || pi) {
+      t += '👥 PASSENGERS\n';
+      const pt = (parseInt(pc) || 0) + (parseInt(py) || 0) + (parseInt(pi) || 0);
+      t += '  C: ' + pc + ' / Y: ' + py;
+      if (parseInt(pi)) t += ' / INF: ' + pi;
+      t += ' / Total: ' + pt + '\n\n';
+    }
+
+    t += '━━━━━━━━━━━━━━━━━━━━\n';
+    $('preview').textContent = t;
+    return t;
+  }
+
+  // ===== SHARED CONTEXT BINDING =====
+  const ctx = FlightContext.load();
+  if (ctx.flightNo) { $('flt').value = ctx.flightNo; autoFill(ctx.flightNo); }
+  if (ctx.date) $('fdate').value = ctx.date;
+  if (ctx.pic) $('pic').value = ctx.pic;
+  if (ctx.fo1) $('fo1').value = ctx.fo1;
+  if (ctx.fo2) $('fo2').value = ctx.fo2;
+  if (ctx.taxi) $('taxi').value = ctx.taxi;
+  if (ctx.weather) $('wx').value = ctx.weather;
+  if (ctx.security) $('security').value = ctx.security;
+  if (ctx.special) $('special').value = ctx.special;
+  if (ctx.luggage) $('luggage').value = ctx.luggage;
+  if (ctx.meals) {
+    if (ctx.meals.c) $('mealC').value = ctx.meals.c;
+    if (ctx.meals.spmlC) $('spmlC').value = ctx.meals.spmlC;
+    if (ctx.meals.y) $('mealY').value = ctx.meals.y;
+    if (ctx.meals.spmlY) $('spmlY').value = ctx.meals.spmlY;
+  }
+  if (ctx.blankets) {
+    if (ctx.blankets.c) $('blkC').value = ctx.blankets.c;
+    if (ctx.blankets.y) $('blkY').value = ctx.blankets.y;
+  }
+  if (ctx.pax) {
+    if (ctx.pax.c) $('paxC').value = ctx.pax.c;
+    if (ctx.pax.y) $('paxY').value = ctx.pax.y;
+    if (ctx.pax.inf) $('paxInf').value = ctx.pax.inf;
+  }
+
+  // ===== CONTEXT PATCH ON INPUT =====
+  const bindings = [
+    ['fdate', v => ({ date: v })],
+    ['pic', v => ({ pic: v.trim() })],
+    ['fo1', v => ({ fo1: v.trim() })],
+    ['fo2', v => ({ fo2: v.trim() })],
+    ['taxi', v => ({ taxi: v.trim() })],
+    ['wx', v => ({ weather: v.trim() })],
+    ['security', v => ({ security: v.trim() })],
+    ['special', v => ({ special: v.trim() })],
+    ['luggage', v => ({ luggage: v.trim() })],
+    ['mealC', v => ({ meals: { c: parseInt(v) || 0 } })],
+    ['spmlC', v => ({ meals: { spmlC: parseInt(v) || 0 } })],
+    ['mealY', v => ({ meals: { y: parseInt(v) || 0 } })],
+    ['spmlY', v => ({ meals: { spmlY: parseInt(v) || 0 } })],
+    ['blkC', v => ({ blankets: { c: parseInt(v) || 0 } })],
+    ['blkY', v => ({ blankets: { y: parseInt(v) || 0 } })],
+    ['paxC', v => ({ pax: { c: parseInt(v) || 0 } })],
+    ['paxY', v => ({ pax: { y: parseInt(v) || 0 } })],
+    ['paxInf', v => ({ pax: { inf: parseInt(v) || 0 } })],
+  ];
+  bindings.forEach(([id, fn]) => {
+    $(id).addEventListener('input', e => FlightContext.patch(fn(e.target.value)));
+  });
+
+  // ===== UNIVERSAL INPUT LISTENER (calcs + preview) =====
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('input', () => { calcTotals(); updatePreview(); });
+  });
+
+  // ===== COPY & CLEAR =====
+  $('copyBtn').addEventListener('click', () => {
+    const text = updatePreview();
+    copyText(text);
+  });
+
+  $('clearBtn').addEventListener('click', () => {
+    if (!confirm('Clear all briefing fields? (Shared flight context is kept)')) return;
+    document.querySelectorAll('input:not([type=date]), textarea').forEach(el => { if (!el.readOnly) el.value = ''; });
+    document.querySelectorAll('input[readonly]').forEach(el => el.value = '');
+    $('autoInfo').innerHTML = '';
+    $('gendecSpray').innerHTML = '';
+    $('gendecCard').style.display = 'none';
+    updatePreview();
+  });
+
+  // Initial render
+  calcTotals();
+  updatePreview();
+  // If flight came from shared context, auto-fill details
+  if (ctx.flightNo && D[ctx.flightNo]) autoFill(ctx.flightNo);
+</script>
+
+</body>
+</html>

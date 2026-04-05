@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IM Hub">
+<meta name="theme-color" content="#1a1028">
+<title>Inflight Manager's Hub</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/theme.css">
+<style>
+  /* ===== HUB HOME ===== */
+  .hero {
+    text-align: center;
+    padding: 48px 20px 28px;
+    color: #fff;
+    padding-top: calc(48px + env(safe-area-inset-top));
+  }
+  .hero .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #2d1b4e, #1a1028);
+    border: 1.5px solid rgba(201, 168, 76, 0.4);
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .hero .mark svg { width: 36px; height: 36px; }
+  .hero .brand {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--tg-gold);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.6px;
+    margin-bottom: 6px;
+  }
+  .hero .tagline {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  /* Flight context card */
+  .ctx-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    color: rgba(255,255,255,0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .ctx-card .ctx-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--tg-gold);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ctx-card .ctx-clear {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+  .ctx-card .ctx-clear:hover { color: rgba(255,255,255,0.8); }
+  .ctx-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+    font-size: 13px;
+  }
+  .ctx-grid > div { display: flex; flex-direction: column; gap: 2px; }
+  .ctx-grid .k {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.5px;
+  }
+  .ctx-grid .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: #fff;
+  }
+  .ctx-grid .v.empty { color: rgba(255,255,255,0.25); font-style: italic; font-family: inherit; font-weight: 400; }
+
+  /* Plugin tiles */
+  .tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 22px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    transition: transform 0.15s var(--ease), box-shadow 0.2s var(--ease);
+    position: relative;
+    overflow: hidden;
+  }
+  .tile:active { transform: scale(0.98); }
+  .tile:hover { box-shadow: var(--shadow-lg); }
+  .tile::after {
+    content: '→';
+    position: absolute;
+    right: 20px;
+    font-size: 22px;
+    color: var(--tg-gold);
+    font-weight: 700;
+  }
+  .tile-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--tg-purple) 0%, var(--tg-purple-light) 100%);
+    color: #fff;
+  }
+  .tile-body { flex: 1; min-width: 0; padding-right: 24px; }
+  .tile-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+    letter-spacing: -0.2px;
+  }
+  .tile-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.5px;
+  }
+  .footer .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    margin-bottom: 8px;
+  }
+  .footer .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--tg-green);
+    box-shadow: 0 0 8px var(--tg-green);
+  }
+  .footer .dot.offline { background: var(--tg-amber); box-shadow: 0 0 8px var(--tg-amber); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="mark">
+    <svg viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="38" stroke="#c9a84c" stroke-width="2" opacity="0.4"/>
+      <circle cx="50" cy="50" r="26" stroke="#c9a84c" stroke-width="1.5" opacity="0.7"/>
+      <path d="M 20 55 L 48 43 L 58 35 L 66 39 L 54 50 L 72 54 L 66 60 L 48 56 L 38 70 L 30 66 L 36 56 Z" fill="#c9a84c"/>
+    </svg>
+  </div>
+  <div class="brand">Thai Airways</div>
+  <h1>Inflight Manager's Hub</h1>
+  <div class="tagline">Your flight. Your tools. All offline.</div>
+</div>
+
+<div class="container">
+
+  <div class="ctx-card" id="ctxCard">
+    <div class="ctx-label">
+      <span>✈ Current Flight</span>
+      <button class="ctx-clear" id="ctxClear">Clear</button>
+    </div>
+    <div class="ctx-grid" id="ctxGrid"></div>
+  </div>
+
+  <div class="tiles">
+    <a class="tile" href="./plugins/announcement/">
+      <div class="tile-icon">📢</div>
+      <div class="tile-body">
+        <div class="tile-title">PA Announcements</div>
+        <div class="tile-desc">Welcome · Thank You · Refuel · Short Connect · TH + EN</div>
+      </div>
+    </a>
+    <a class="tile" href="./plugins/briefing/">
+      <div class="tile-icon">📋</div>
+      <div class="tile-body">
+        <div class="tile-title">Cabin Briefing</div>
+        <div class="tile-desc">Full pre-flight briefing sheet · crew · meals · loads</div>
+      </div>
+    </a>
+    <a class="tile" href="./plugins/crew-tools/">
+      <div class="tile-icon">⏱</div>
+      <div class="tile-body">
+        <div class="tile-title">Crew Tools</div>
+        <div class="tile-desc">Flight time calculator · Rest plan · UTC conversion</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="footer">
+    <div class="status">
+      <span class="dot" id="netDot"></span>
+      <span id="netLabel">Online · Ready for offline</span>
+    </div>
+    <div>v1.0.0 · Private tool</div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { FlightContext } from './shared/flight-context.js';
+  import { registerSW } from './shared/ui.js';
+
+  registerSW('./sw.js', './');
+
+  // ===== Render flight context summary =====
+  const grid = document.getElementById('ctxGrid');
+  const ctxClear = document.getElementById('ctxClear');
+
+  function fmt(val, empty = '—') {
+    if (val == null || val === '' || val === 0) return `<span class="v empty">${empty}</span>`;
+    return `<span class="v">${String(val)}</span>`;
+  }
+  function fmtTime(t) {
+    if (!t || (t.h == null && t.m == null)) return `<span class="v empty">—</span>`;
+    return `<span class="v">${t.h ?? 0}h ${String(t.m ?? 0).padStart(2,'0')}m</span>`;
+  }
+
+  function render(ctx) {
+    grid.innerHTML = `
+      <div><span class="k">Flight</span>${fmt(ctx.flightNo)}</div>
+      <div><span class="k">Date</span>${fmt(ctx.date)}</div>
+      <div><span class="k">Route</span>${fmt(ctx.dep.airport && ctx.arr.airport ? `${ctx.dep.airport} → ${ctx.arr.airport}` : '')}</div>
+      <div><span class="k">Flight time</span>${fmtTime(ctx.flightTime)}</div>
+      <div><span class="k">Captain</span>${fmt(ctx.pic)}</div>
+      <div><span class="k">ZS</span>${fmt(ctx.zs)}</div>
+    `;
+  }
+
+  render(FlightContext.load());
+  FlightContext.subscribe(render);
+
+  ctxClear.addEventListener('click', () => {
+    if (confirm('Clear current flight data from all plugins?')) {
+      FlightContext.clear();
+    }
+  });
+
+  // ===== Network status =====
+  const dot = document.getElementById('netDot');
+  const label = document.getElementById('netLabel');
+  function updateNet() {
+    if (navigator.onLine) {
+      dot.classList.remove('offline');
+      label.textContent = 'Online · Ready for offline';
+    } else {
+      dot.classList.add('offline');
+      label.textContent = 'Offline · Running locally';
+    }
+  }
+  updateNet();
+  window.addEventListener('online', updateNet);
+  window.addEventListener('offline', updateNet);
+</script>
+
+</body>
+</html>
