@@ -4,7 +4,7 @@
    Bump CACHE_VERSION to force an update of all cached files.
    ============================================================ */
 
-const CACHE_VERSION = 'imh-v1.0.1';
+const CACHE_VERSION = 'imh-v1.0.2';
 const CACHE_NAME = `imh-cache-${CACHE_VERSION}`;
 
 // Core shell — precached on install

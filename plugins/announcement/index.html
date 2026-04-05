@@ -167,6 +167,10 @@ Thank you.</div>
         <div class="cs-status" id="codeshareStatus"></div>
       </div>
       <div class="fg">
+        <label>สนามบิน / Airport <span style="color:var(--text-muted);font-weight:500">(แก้ไขได้ · edit to override)</span></label>
+        <input type="text" id="airportInput" placeholder="auto-filled from flight">
+      </div>
+      <div class="fg">
         <label>เวลาบิน / Flight time</label>
         <div class="row">
           <div class="fg"><input type="number" id="hoursInput" class="mono center" placeholder="ชม." min="0" max="20" inputmode="numeric"></div>
@@ -352,6 +356,10 @@ Thank you.</div>
         info.innerHTML = `<span class="route">${v} → ${fl.dest}</span><span class="detail">${ap.city_en || fl.dest} · ${fl.h}h ${fl.m}m</span>`;
         $('hoursInput').value = fl.h;
         $('minutesInput').value = fl.m;
+        // Auto-fill airport field (editable override)
+        if (ap.th || ap.en) {
+          $('airportInput').value = ap.th || ap.en;
+        }
       } else {
         info.className = 'hidden';
       }
@@ -371,6 +379,7 @@ Thank you.</div>
     FlightContext.patch({
       flightNo: v,
       codeshare: csInput.value.trim(),
+      airport: $('airportInput').value.trim(),
       flightTime: {
         h: parseInt($('hoursInput').value) || null,
         m: parseInt($('minutesInput').value) || null,
@@ -384,12 +393,14 @@ Thank you.</div>
   if (ctx.pic) $('captainInput').value = ctx.pic;
   if (ctx.zs) $('zsInput').value = ctx.zs;
   if (ctx.codeshare) $('codeshareInput').value = ctx.codeshare;
+  if (ctx.airport) $('airportInput').value = ctx.airport;
   if (ctx.flightTime && ctx.flightTime.h != null) $('hoursInput').value = ctx.flightTime.h;
   if (ctx.flightTime && ctx.flightTime.m != null) $('minutesInput').value = ctx.flightTime.m;
 
   $('captainInput').addEventListener('input', (e) => FlightContext.patch({ pic: e.target.value.trim() }));
   $('zsInput').addEventListener('input', (e) => FlightContext.patch({ zs: e.target.value.trim() }));
   $('codeshareInput').addEventListener('input', (e) => FlightContext.patch({ codeshare: e.target.value.trim() }));
+  $('airportInput').addEventListener('input', (e) => FlightContext.patch({ airport: e.target.value.trim() }));
   $('hoursInput').addEventListener('input', (e) => FlightContext.patch({ flightTime: { h: parseInt(e.target.value) || null } }));
   $('minutesInput').addEventListener('input', (e) => FlightContext.patch({ flightTime: { m: parseInt(e.target.value) || null } }));
 
@@ -399,6 +410,7 @@ Thank you.</div>
     const captain = $('captainInput').value.trim();
     const zs = $('zsInput').value.trim();
     const codeshare = $('codeshareInput').value.trim();
+    const airportOverride = $('airportInput').value.trim();
     const hours = $('hoursInput').value;
     const minutes = $('minutesInput').value;
 
@@ -415,8 +427,8 @@ Thank you.</div>
     const greeting = getGreeting(fl.dep);
     const cityTh = ap.city_th || fl.dest || '___';
     const cityEn = ap.city_en || fl.dest || '___';
-    const apTh = ap.th || '___';
-    const apEn = ap.en || '___';
+    const apTh = airportOverride || ap.th || '___';
+    const apEn = airportOverride || ap.en || '___';
     const csText = codeshare || '………';
 
     paData.th = `ท่านผู้โดยสารครับ

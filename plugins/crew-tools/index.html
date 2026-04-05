@@ -472,21 +472,7 @@
       <h2>Rest Plan</h2>
       <div class="card-sub">Equal-split shifts with handover window</div>
 
-      <div class="sub-label">01 · Crew Count</div>
-      <div class="fg">
-        <label>Total Cabin Crew on Rest Plan</label>
-        <div class="chip-row" id="crew-selector">
-          <div class="chip-btn active" data-crew="2">2</div>
-          <div class="chip-btn" data-crew="3">3</div>
-          <div class="chip-btn" data-crew="4">4</div>
-          <div class="chip-btn" data-crew="5">5</div>
-          <div class="chip-btn" data-crew="6">6</div>
-          <div class="chip-btn" data-crew="7">7</div>
-          <div class="chip-btn" data-crew="8">8</div>
-        </div>
-      </div>
-
-      <div class="sub-label">02 · Shift Times</div>
+      <div class="sub-label">01 · Shift Times</div>
       <div class="row">
         <div class="fg">
           <label>1st Shift Start <span style="color:var(--tg-gold);font-weight:700">(BKK)</span></label>
@@ -503,6 +489,8 @@
       <div class="fg">
         <label>Handover Duration (both groups active)</label>
         <div class="chip-row" id="handover-selector">
+          <div class="chip-btn" data-ho="0">0 min</div>
+          <div class="chip-btn" data-ho="5">5 min</div>
           <div class="chip-btn active" data-ho="10">10 min</div>
           <div class="chip-btn" data-ho="15">15 min</div>
           <div class="chip-btn" data-ho="20">20 min</div>
@@ -510,19 +498,19 @@
         </div>
       </div>
 
-      <div class="sub-label">03 · Service Times</div>
+      <div class="sub-label">02 · Service Times</div>
       <div class="row">
         <div class="fg">
           <label>Meal Prep Time (min)</label>
           <input type="number" id="meal-prep" placeholder="30" min="5" max="120">
         </div>
         <div class="fg">
-          <label>2nd Service Begin <span style="color:var(--tg-gold);font-weight:700">(BKK)</span></label>
-          <input type="text" id="service2-start" placeholder="05:00" maxlength="5" inputmode="numeric">
+          <label>2nd Service Begin <span style="color:var(--tg-gold);font-weight:700">(BKK · optional)</span></label>
+          <input type="text" id="service2-start" placeholder="auto: landing − 30m" maxlength="5" inputmode="numeric">
         </div>
       </div>
 
-      <div class="sub-label green">04 · Landing (Auto-Synced · BKK)</div>
+      <div class="sub-label green">03 · Landing (Auto-Synced · BKK)</div>
       <div class="fg">
         <label>Landing Time — BKK (from Flight Calc)</label>
         <div class="locked-field empty" id="landing-display">
@@ -547,12 +535,10 @@
           <div class="rest-bar-item">
             <div class="rb-label">Group A Rest</div>
             <div class="rb-val amber" id="group-a-duration">—</div>
-            <div class="rb-count" id="group-a-count">— crew</div>
           </div>
           <div class="rest-bar-item">
             <div class="rb-label">Group B Rest</div>
             <div class="rb-val purple" id="group-b-duration">—</div>
-            <div class="rb-count" id="group-b-count">— crew</div>
           </div>
         </div>
 
@@ -573,10 +559,6 @@
           <div class="verify-row">
             <span class="vr-key">Equal split</span>
             <span class="vr-val ok" id="v-equal">✓ YES</span>
-          </div>
-          <div class="verify-row">
-            <span class="vr-key">Crew per group</span>
-            <span class="vr-val" id="v-crew-split">—</span>
           </div>
           <div class="verify-row">
             <span class="vr-key">Meal prep before 2nd svc</span>
@@ -660,17 +642,8 @@ autoFormatTime($('shift1-start'));
 autoFormatTime($('service2-start'));
 
 /* ═══════════════════════════════════════
-   CREW / HANDOVER SELECTORS
+   HANDOVER SELECTOR
 ═══════════════════════════════════════ */
-let crewCount = 2;
-document.querySelectorAll('#crew-selector .chip-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#crew-selector .chip-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    crewCount = parseInt(btn.dataset.crew);
-  });
-});
-
 let handoverMin = 10;
 document.querySelectorAll('#handover-selector .chip-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -780,7 +753,14 @@ function calcRest() {
 
   const s1Min = parseTime($('shift1-start').value);
   const prepMin = parseInt($('meal-prep').value) || 0;
-  const svc2Min = parseTime($('service2-start').value);
+  let svc2Min = parseTime($('service2-start').value);
+
+  // Fallback: if 2nd Service Begin is empty, use landing − 30 min (BKK)
+  let svc2Autofilled = false;
+  if (svc2Min === null && landingAbsMin !== null) {
+    svc2Min = ((landingAbsMin - 30) % 1440 + 1440) % 1440;
+    svc2Autofilled = true;
+  }
 
   if (s1Min === null || prepMin <= 0 || svc2Min === null || landingAbsMin === null) {
     errEl.classList.add('show'); return;
@@ -803,9 +783,6 @@ function calcRest() {
   const handoverStartAbs = s1Min + eachShift;
   const handoverEndAbs = handoverStartAbs + handoverMin;
 
-  const groupACount = Math.ceil(crewCount / 2);
-  const groupBCount = Math.floor(crewCount / 2);
-
   let lndAbs = landingAbsMin;
   while (lndAbs < svc2Abs) lndAbs += 1440;
 
@@ -813,17 +790,19 @@ function calcRest() {
   $('handover-start-val').textContent = fmt(handoverStartAbs);
   hsDisplay.classList.remove('empty');
 
+  const svc2Label = svc2Autofilled ? '2ND SERVICE BEGIN (auto: landing − 30m)' : '2ND SERVICE BEGIN';
+
   const events = [
-    { time: s1Min, label: '1ST SHIFT BEGIN', sub: `Group A active · ${groupBCount} crew resting`, dot: 'purple', line: 'service',
+    { time: s1Min, label: '1ST SHIFT BEGIN', sub: `Group A on duty · Group B resting`, dot: 'purple', line: 'service',
       badge: { cls:'purple', text:`Group B rests  ${fmt(s1Min)} → ${fmt(handoverStartAbs)}` } },
-    { time: handoverStartAbs, label: 'HANDOVER BEGIN', sub: `Both ${crewCount} crew active — briefing & handover`, dot: 'amber', line: 'rest-a',
-      badge: { cls:'amber', text:`${handoverMin} min handover` } },
-    { time: handoverEndAbs, label: '2ND SHIFT BEGIN · GROUP A → REST', sub: `Group B solo · ${groupACount} crew resting`, dot: 'amber', line: 'rest-b',
+    { time: handoverStartAbs, label: 'HANDOVER BEGIN', sub: `Both groups active — briefing & handover`, dot: 'amber', line: 'rest-a',
+      badge: { cls:'amber', text: handoverMin > 0 ? `${handoverMin} min handover` : 'instant handover' } },
+    { time: handoverEndAbs, label: '2ND SHIFT BEGIN · GROUP A → REST', sub: `Group B on duty · Group A resting`, dot: 'amber', line: 'rest-b',
       badge: { cls:'amber', text:`Group A rests  ${fmt(handoverEndAbs)} → ${fmt(mealPrepStartAbs)}` } },
-    { time: mealPrepStartAbs, label: 'MEAL PREP BEGIN', sub: `Group A back · ${prepMin} min prep · all crew active`, dot: 'green', line: 'service',
+    { time: mealPrepStartAbs, label: 'MEAL PREP BEGIN', sub: `Group A back · ${prepMin} min prep · all active`, dot: 'green', line: 'service',
       badge: { cls:'green', text:`${prepMin} min prep` } },
-    { time: svc2Abs, label: '2ND SERVICE BEGIN', sub: `All ${crewCount} crew active`, dot: 'green', line: 'service', badge: null },
-    { time: lndAbs, label: 'LANDING', sub: fmt(lndAbs) + ' local', dot: 'red', line: null, badge: null },
+    { time: svc2Abs, label: svc2Label, sub: `All crew active`, dot: 'green', line: 'service', badge: null },
+    { time: lndAbs, label: 'LANDING', sub: fmt(lndAbs) + ' BKK', dot: 'red', line: null, badge: null },
   ];
 
   const tl = $('timeline-output');
@@ -851,14 +830,11 @@ function calcRest() {
 
   $('group-a-duration').textContent = fmtDuration(eachShift);
   $('group-b-duration').textContent = fmtDuration(eachShift);
-  $('group-a-count').textContent = `${groupACount} crew`;
-  $('group-b-count').textContent = `${groupBCount} crew`;
 
   $('v-total-window').textContent = `${fmtDuration(totalInterval)}  (${fmt(s1Min)} → ${fmt(mealPrepStartAbs)})`;
   $('v-a-rest').textContent = `${fmt(handoverEndAbs)} → ${fmt(mealPrepStartAbs)}  (${fmtDuration(eachShift)}) ✓`;
   $('v-b-rest').textContent = `${fmt(s1Min)} → ${fmt(handoverStartAbs)}  (${fmtDuration(eachShift)}) ✓`;
   $('v-equal').textContent = `✓ EQUAL — ${fmtDuration(eachShift)} each`;
-  $('v-crew-split').textContent = `Group A: ${groupACount} · Group B: ${groupBCount}`;
   $('v-meal-prep').textContent = `${fmt(mealPrepStartAbs)} → ${fmt(svc2Abs)}  (${prepMin} min) ✓`;
 
   resEl.classList.add('show');
