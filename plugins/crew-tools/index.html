@@ -131,17 +131,22 @@
   .result-panel.show { display: block; animation: fadeIn 0.3s var(--ease); }
   .result-row {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 12px;
-    align-items: center;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: stretch;
     margin-top: 6px;
   }
   .result-block {
     text-align: center;
-    padding: 12px 8px;
+    padding: 12px 6px;
     background: var(--card-bg);
     border-radius: 10px;
     border: 1px solid var(--border);
+  }
+  .result-block.pivot {
+    border-color: var(--tg-gold);
+    background: linear-gradient(180deg, #fffbf0, #fff);
+    box-shadow: 0 2px 10px rgba(201,168,76,0.15);
   }
   .result-block .r-label {
     font-size: 10px;
@@ -153,7 +158,7 @@
   }
   .result-block .r-time {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--tg-purple);
   }
@@ -431,7 +436,13 @@
             <div class="r-day" id="res-date">—</div>
             <div id="next-day-tag" class="next-day-tag" style="display:none">+1 DAY</div>
           </div>
-          <div class="result-arrow">→</div>
+          <div class="result-block pivot">
+            <div class="r-label">BKK Arrival ★</div>
+            <div class="r-time" id="res-bkk">—</div>
+            <div class="r-sub">UTC+7</div>
+            <div class="r-day" id="res-bkk-date">—</div>
+            <div id="bkk-day-tag" class="next-day-tag" style="display:none;background:var(--tg-gold)">+1 DAY</div>
+          </div>
           <div class="result-block">
             <div class="r-label">UTC Arrival</div>
             <div class="r-time" id="res-utc">—</div>
@@ -478,7 +489,7 @@
       <div class="sub-label">02 · Shift Times</div>
       <div class="row">
         <div class="fg">
-          <label>1st Shift Start</label>
+          <label>1st Shift Start <span style="color:var(--tg-gold);font-weight:700">(BKK)</span></label>
           <input type="text" id="shift1-start" placeholder="21:30" maxlength="5" inputmode="numeric">
         </div>
         <div class="fg">
@@ -506,14 +517,14 @@
           <input type="number" id="meal-prep" placeholder="30" min="5" max="120">
         </div>
         <div class="fg">
-          <label>2nd Service Begin</label>
+          <label>2nd Service Begin <span style="color:var(--tg-gold);font-weight:700">(BKK)</span></label>
           <input type="text" id="service2-start" placeholder="05:00" maxlength="5" inputmode="numeric">
         </div>
       </div>
 
-      <div class="sub-label green">04 · Landing (Auto-Synced)</div>
+      <div class="sub-label green">04 · Landing (Auto-Synced · BKK)</div>
       <div class="fg">
-        <label>Landing Time (from Flight Calc)</label>
+        <label>Landing Time — BKK (from Flight Calc)</label>
         <div class="locked-field empty" id="landing-display">
           <span id="landing-time-val">— Calculate flight time first —</span>
           <span class="lock-icon">AUTO</span>
@@ -697,11 +708,15 @@ function calcFlight() {
   const depUTCMin = depMin - Math.round(depUTC * 60);
   const arrUTCMin = depUTCMin + durTotalMin;
   const arrLocalAbsMin = arrUTCMin + Math.round(arrUTC * 60);
+  const BKK_OFFSET = 7; // Bangkok is UTC+7
+  const arrBKKAbsMin = arrUTCMin + BKK_OFFSET * 60;
 
   const localDayShift = Math.floor(arrLocalAbsMin / 1440);
   const utcDayShift = Math.floor(arrUTCMin / 1440);
+  const bkkDayShift = Math.floor(arrBKKAbsMin / 1440);
 
   $('res-local').textContent = fmt(arrLocalAbsMin);
+  $('res-bkk').textContent = fmt(arrBKKAbsMin);
   $('res-utc').textContent = fmt(arrUTCMin);
   $('res-utc-label').textContent = utcLabel(arrUTC);
 
@@ -717,17 +732,31 @@ function calcFlight() {
     ndTag.style.display = 'none';
     $('res-date').textContent = 'Same day';
   }
+
+  const bkkTag = $('bkk-day-tag');
+  if (bkkDayShift > 0) {
+    bkkTag.style.display = 'inline-block';
+    bkkTag.textContent = bkkDayShift === 1 ? '+1 DAY' : `+${bkkDayShift} DAYS`;
+    $('res-bkk-date').textContent = bkkDayShift === 1 ? 'Next day' : bkkDayShift + ' days later';
+  } else if (bkkDayShift < 0) {
+    bkkTag.style.display = 'inline-block'; bkkTag.textContent = '-1 DAY';
+    $('res-bkk-date').textContent = 'Previous day';
+  } else {
+    bkkTag.style.display = 'none';
+    $('res-bkk-date').textContent = 'Same day';
+  }
+
   $('res-utc-date').textContent = utcDayShift !== 0 ? `${utcDayShift > 0 ? '+' : ''}${utcDayShift} day(s)` : 'Same day';
   $('fp-dep').textContent = fmt(depMin) + ' ' + utcLabel(depUTC);
-  $('fp-arr').textContent = fmt(arrLocalAbsMin) + ' ' + utcLabel(arrUTC);
+  $('fp-arr').textContent = fmt(arrBKKAbsMin) + ' BKK';
   $('fp-dur').textContent = `${durH}h ${String(durM).padStart(2,'0')}m`;
   resEl.classList.add('show');
 
-  // ── SYNC TO REST CALCULATOR ──
-  landingAbsMin = arrLocalAbsMin;
+  // ── SYNC TO REST CALCULATOR ── (always BKK time as pivot)
+  landingAbsMin = arrBKKAbsMin;
   const dispEl = $('landing-display');
   const valEl = $('landing-time-val');
-  valEl.textContent = fmt(arrLocalAbsMin) + (localDayShift !== 0 ? ` (${localDayShift > 0 ? '+' : ''}${localDayShift}d)` : '');
+  valEl.textContent = fmt(arrBKKAbsMin) + ' BKK' + (bkkDayShift !== 0 ? ` (${bkkDayShift > 0 ? '+' : ''}${bkkDayShift}d)` : '');
   dispEl.classList.remove('empty');
 
   // ── SYNC TO SHARED FLIGHT CONTEXT ──
@@ -735,7 +764,7 @@ function calcFlight() {
     dep: { time: fmt(depMin), utc: String($('dep-utc').value).trim() },
     arr: { time: fmt(arrLocalAbsMin), utc: String($('arr-utc').value).trim() },
     flightTime: { h: durH, m: durM },
-    landing: fmt(arrLocalAbsMin),
+    landing: fmt(arrBKKAbsMin),
   });
 }
 
