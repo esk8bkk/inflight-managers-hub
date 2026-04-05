@@ -752,7 +752,7 @@ function calcRest() {
   errEl.textContent = '⚠ Please fill all fields (or calculate flight time first)';
 
   const s1Min = parseTime($('shift1-start').value);
-  const prepMin = parseInt($('meal-prep').value) || 0;
+  const prepMin = parseInt($('meal-prep').value) || 30;
   let svc2Min = parseTime($('service2-start').value);
 
   // Fallback: if 2nd Service Begin is empty, use landing − 30 min (BKK)
@@ -762,7 +762,7 @@ function calcRest() {
     svc2Autofilled = true;
   }
 
-  if (s1Min === null || prepMin <= 0 || svc2Min === null || landingAbsMin === null) {
+  if (s1Min === null || svc2Min === null || landingAbsMin === null) {
     errEl.classList.add('show'); return;
   }
 
