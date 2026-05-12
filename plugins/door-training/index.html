@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1028">
+<title>Door Training · IM Hub</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" type="image/svg+xml" href="../../icons/icon.svg">
+<link rel="apple-touch-icon" href="../../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  /* ===== Door Sim Card ===== */
+  .door-sim-card {
+    padding: 16px;
+    background: linear-gradient(180deg, #faf8fd 0%, #ffffff 100%);
+  }
+
+  /* Variant selector */
+  .variant-bar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--input-bg);
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+  .variant-btn {
+    flex: 1;
+    padding: 8px 6px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+  }
+  .variant-btn .mfr {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-subtle);
+    margin-top: 1px;
+    text-transform: uppercase;
+  }
+  .variant-btn.active {
+    background: var(--tg-purple);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(74, 20, 140, 0.3);
+  }
+  .variant-btn.active .mfr { color: rgba(255,255,255,0.7); }
+
+  .variant-note {
+    padding: 10px 12px;
+    background: rgba(74, 20, 140, 0.06);
+    border-left: 3px solid var(--tg-purple);
+    border-radius: 0 8px 8px 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .variant-note strong { color: var(--tg-purple); font-weight: 700; }
+  .variant-note code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(74, 20, 140, 0.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .status-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 6px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s var(--ease);
+  }
+  .status-pill .k {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .status-pill .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .status-pill.armed { background: rgba(198, 40, 40, 0.08); border-color: rgba(198, 40, 40, 0.4); }
+  .status-pill.armed .v { color: var(--tg-red); }
+  .status-pill.disarmed { background: rgba(46, 125, 50, 0.08); border-color: rgba(46, 125, 50, 0.35); }
+  .status-pill.disarmed .v { color: var(--tg-green); }
+  .status-pill.warn { background: rgba(245, 124, 0, 0.1); border-color: rgba(245, 124, 0, 0.4); }
+  .status-pill.warn .v { color: var(--tg-amber); }
+
+  .door-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 320 / 480;
+    max-height: 420px;
+    background: linear-gradient(180deg, #1a1028 0%, #2d1b4e 100%);
+    border-radius: 14px;
+    overflow: hidden;
+    user-select: none;
+  }
+  .door-stage svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .hotspot {
+    cursor: pointer;
+    transition: filter 0.2s var(--ease);
+  }
+  .hotspot:hover { filter: brightness(1.2); }
+  .hotspot.highlight {
+    filter: drop-shadow(0 0 6px #c9a84c) drop-shadow(0 0 12px #c9a84c);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { filter: drop-shadow(0 0 4px #c9a84c) drop-shadow(0 0 10px #c9a84c); }
+    50% { filter: drop-shadow(0 0 8px #e0c270) drop-shadow(0 0 16px #e0c270); }
+  }
+
+  .hotspot-label {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.45;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+  }
+  .hotspot-label.empty { color: rgba(255,255,255,0.55); font-style: italic; }
+  .hotspot-label strong { color: var(--tg-gold); margin-right: 6px; }
+
+  .sim-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .sim-controls .chip {
+    flex: 1;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--input-bg);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+  .sim-controls .chip:active { transform: scale(0.97); }
+  .sim-controls .chip.primary {
+    background: linear-gradient(135deg, var(--tg-purple), var(--tg-purple-light));
+    color: #fff;
+    border-color: transparent;
+  }
+  .sim-controls .chip.gold {
+    background: linear-gradient(135deg, var(--tg-gold), var(--tg-gold-light));
+    color: var(--tg-dark);
+    border-color: transparent;
+  }
+  .sim-controls .chip:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ===== Lesson Sections ===== */
+  .lesson-step {
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: all 0.2s var(--ease);
+  }
+  .lesson-step.active {
+    border-color: var(--tg-gold);
+    background: rgba(201, 168, 76, 0.06);
+    box-shadow: 0 4px 14px rgba(201, 168, 76, 0.15);
+  }
+  .lesson-step.done {
+    border-color: rgba(46, 125, 50, 0.4);
+    background: rgba(46, 125, 50, 0.05);
+  }
+  .lesson-step .step-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .lesson-step .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--tg-purple);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .lesson-step.done .step-num {
+    background: var(--tg-green);
+  }
+  .lesson-step.done .step-num::after { content: '✓'; }
+  .lesson-step.done .step-num span { display: none; }
+  .lesson-step .step-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .lesson-step .step-body {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.55;
+    margin-left: 34px;
+  }
+  .lesson-step .step-body ul {
+    margin: 6px 0 0 18px;
+    padding: 0;
+  }
+  .lesson-step .step-body li { margin-bottom: 3px; }
+  .lesson-step .step-body code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--tg-purple);
+  }
+  .lesson-step .step-actions {
+    margin: 10px 0 0 34px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .lesson-step .mini-btn {
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    border: 1.5px solid var(--border-strong);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+  .lesson-step .mini-btn:hover { border-color: var(--tg-purple); color: var(--tg-purple); }
+  .lesson-step .mini-btn.gold {
+    background: linear-gradient(135deg, var(--tg-gold), var(--tg-gold-light));
+    color: var(--tg-dark);
+    border-color: transparent;
+  }
+  .lesson-step .mini-btn.danger {
+    border-color: rgba(198, 40, 40, 0.4);
+    color: var(--tg-red);
+  }
+
+  .callout {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    display: flex;
+    gap: 10px;
+  }
+  .callout .ico { flex-shrink: 0; font-size: 18px; line-height: 1; }
+  .callout.info { background: rgba(21, 101, 192, 0.08); color: #0d3a72; border-left: 3px solid var(--tg-blue); }
+  .callout.warn { background: rgba(245, 124, 0, 0.1); color: #6b3300; border-left: 3px solid var(--tg-amber); }
+  .callout.danger { background: rgba(198, 40, 40, 0.08); color: #6e1a1a; border-left: 3px solid var(--tg-red); }
+
+  /* Quiz */
+  .quiz-q {
+    background: var(--card-bg-alt);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1.5px solid var(--border);
+  }
+  .quiz-q .q-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+    display: flex;
+    gap: 8px;
+  }
+  .quiz-q .q-title .q-num {
+    flex-shrink: 0;
+    color: var(--tg-gold);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .quiz-choice {
+    display: block;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: all 0.15s var(--ease);
+  }
+  .quiz-choice:hover { border-color: var(--tg-purple); }
+  .quiz-choice.correct {
+    background: rgba(46, 125, 50, 0.1);
+    border-color: var(--tg-green);
+    color: var(--tg-green);
+    font-weight: 600;
+  }
+  .quiz-choice.wrong {
+    background: rgba(198, 40, 40, 0.08);
+    border-color: var(--tg-red);
+    color: var(--tg-red);
+  }
+  .quiz-choice:disabled { cursor: default; }
+  .quiz-explain {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--input-bg);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    display: none;
+  }
+  .quiz-explain.show { display: block; }
+
+  /* Progress card */
+  .progress-card { padding: 16px 18px; }
+  .progress-bar-wrap {
+    background: var(--input-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    height: 10px;
+    margin: 10px 0 12px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--tg-gold), var(--tg-gold-light));
+    transition: width 0.3s var(--ease);
+  }
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .progress-row strong { color: var(--text); font-weight: 700; }
+
+  .section-btn-sm { padding: 8px 12px; font-size: 12px; }
+
+  .disclaimer {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+    line-height: 1.55;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <a href="../../" class="back-btn">← Hub</a>
+  <div class="logo">🚪 Plugin 4</div>
+  <h1>Door Training</h1>
+  <div class="sub">Wide-body Type A · Interactive lesson</div>
+</header>
+
+<div class="container">
+
+  <!-- ============ DOOR SIMULATOR ============ -->
+  <div class="card door-sim-card">
+    <div class="card-title">Interactive Door</div>
+
+    <div class="variant-bar" id="variantBar">
+      <button class="variant-btn" data-variant="B777-300ER" type="button">B777-300ER<span class="mfr">Boeing</span></button>
+      <button class="variant-btn" data-variant="A350-900" type="button">A350-900<span class="mfr">Airbus</span></button>
+      <button class="variant-btn" data-variant="A330-300" type="button">A330-300<span class="mfr">Airbus</span></button>
+    </div>
+
+    <div class="variant-note" id="variantNote"></div>
+
+    <div class="status-bar">
+      <div class="status-pill disarmed" id="modePill">
+        <span class="k">Mode</span>
+        <span class="v" id="modeV">DISARMED</span>
+      </div>
+      <div class="status-pill" id="doorPill">
+        <span class="k">Door</span>
+        <span class="v" id="doorV">CLOSED</span>
+      </div>
+      <div class="status-pill" id="slidePill">
+        <span class="k">Slide</span>
+        <span class="v" id="slideV">STOWED</span>
+      </div>
+    </div>
+
+    <div class="door-stage">
+      <svg viewBox="0 0 320 480" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cabin wall background -->
+        <defs>
+          <linearGradient id="cabinGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3a2868"/>
+            <stop offset="100%" stop-color="#1a1028"/>
+          </linearGradient>
+          <linearGradient id="doorGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e8e0f0"/>
+            <stop offset="100%" stop-color="#b5abc9"/>
+          </linearGradient>
+          <linearGradient id="metalGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#9c93b5"/>
+            <stop offset="50%" stop-color="#d4c8e4"/>
+            <stop offset="100%" stop-color="#7a7088"/>
+          </linearGradient>
+        </defs>
+
+        <rect x="0" y="0" width="320" height="480" fill="url(#cabinGrad)"/>
+
+        <!-- Floor line -->
+        <line x1="0" y1="430" x2="320" y2="430" stroke="#5a4880" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.5"/>
+        <text x="10" y="445" fill="#8b7fa3" font-family="DM Sans" font-size="9" font-weight="600" letter-spacing="1">CABIN FLOOR</text>
+
+        <!-- Door frame -->
+        <rect x="50" y="40" width="220" height="390" rx="14" fill="#2d2640" stroke="#5a4880" stroke-width="2"/>
+
+        <!-- Door body (transforms when opening) -->
+        <g id="doorBody">
+          <rect x="58" y="48" width="204" height="374" rx="10" fill="url(#doorGrad)"/>
+
+          <!-- Subtle panel lines -->
+          <line x1="58" y1="140" x2="262" y2="140" stroke="#9c93b5" stroke-width="0.5" opacity="0.4"/>
+          <line x1="58" y1="320" x2="262" y2="320" stroke="#9c93b5" stroke-width="0.5" opacity="0.4"/>
+
+          <!-- Viewing window (top center) -->
+          <g class="hotspot" data-part="viewport">
+            <ellipse cx="160" cy="100" rx="44" ry="32" fill="#1a1028" stroke="#7a7088" stroke-width="3"/>
+            <ellipse cx="160" cy="100" rx="38" ry="26" fill="#3a2868" opacity="0.7"/>
+            <ellipse cx="148" cy="92" rx="12" ry="6" fill="#8a7ab0" opacity="0.4"/>
+          </g>
+
+          <!-- Door operating handle (right side) -->
+          <g class="hotspot" data-part="handle" id="handleGroup">
+            <rect x="210" y="200" width="40" height="80" rx="6" fill="#2d2640" opacity="0.3"/>
+            <g id="handleLever">
+              <rect x="216" y="232" width="28" height="14" rx="3" fill="url(#metalGrad)" stroke="#5a4880" stroke-width="1"/>
+              <circle cx="230" cy="239" r="3" fill="#3a2868"/>
+            </g>
+            <text x="230" y="295" fill="#5a4880" font-family="DM Sans" font-size="8" font-weight="700" text-anchor="middle" letter-spacing="0.5">HANDLE</text>
+          </g>
+
+          <!-- Mode select / arming lever (lower left) -->
+          <g class="hotspot" data-part="mode">
+            <rect x="76" y="340" width="56" height="50" rx="6" fill="#2d2640"/>
+            <rect x="82" y="346" width="44" height="38" rx="3" fill="#1a1028" stroke="#5a4880" stroke-width="1"/>
+            <!-- Mode indicator: switches color -->
+            <rect id="modeSwitch" x="86" y="350" width="36" height="14" rx="2" fill="#2e7d32"/>
+            <text id="modeSwitchLabel" x="104" y="360" fill="#fff" font-family="JetBrains Mono" font-size="8" font-weight="700" text-anchor="middle">DISARM</text>
+            <!-- Arrow indicator -->
+            <path id="modeArrow" d="M 104 372 L 104 380 M 100 376 L 104 380 L 108 376" stroke="#2e7d32" stroke-width="1.5" fill="none"/>
+            <text x="104" y="398" fill="#5a4880" font-family="DM Sans" font-size="7" font-weight="700" text-anchor="middle" letter-spacing="0.3">MODE SELECT</text>
+          </g>
+
+          <!-- Slide bustle (bottom) -->
+          <g class="hotspot" data-part="bustle">
+            <rect x="68" y="370" width="184" height="42" rx="5" fill="#3a2868" opacity="0.7"/>
+            <rect x="74" y="376" width="172" height="30" rx="3" fill="#1a1028" stroke="#5a4880" stroke-width="0.5"/>
+            <text x="160" y="395" fill="#8b7fa3" font-family="DM Sans" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="1">SLIDE / RAFT BUSTLE</text>
+          </g>
+
+          <!-- Indicator window (next to handle) -->
+          <g class="hotspot" data-part="indicator">
+            <rect x="180" y="160" width="36" height="22" rx="3" fill="#1a1028" stroke="#5a4880" stroke-width="1.5"/>
+            <rect id="indicatorGlow" x="183" y="163" width="30" height="16" rx="2" fill="#2e7d32" opacity="0.85"/>
+            <text id="indicatorText" x="198" y="174" fill="#fff" font-family="JetBrains Mono" font-size="7" font-weight="700" text-anchor="middle">SAFE</text>
+          </g>
+
+          <!-- Gust lock (top right edge) -->
+          <g class="hotspot" data-part="gustlock">
+            <circle cx="240" cy="70" r="10" fill="url(#metalGrad)" stroke="#5a4880" stroke-width="1"/>
+            <circle cx="240" cy="70" r="4" fill="#3a2868"/>
+          </g>
+        </g>
+
+        <!-- Girt bar (only visible when armed) -->
+        <g id="girtBar" opacity="0">
+          <rect x="74" y="418" width="172" height="6" rx="2" fill="#c62828" stroke="#7a0000" stroke-width="0.5"/>
+          <rect x="74" y="418" width="172" height="2" fill="#ff5252" opacity="0.6"/>
+        </g>
+
+        <!-- Slide (deployed state) -->
+        <g id="slideGroup" opacity="0">
+          <path d="M 50 430 Q 100 460 200 470 L 300 478 L 50 478 Z" fill="#f57c00" stroke="#bf5500" stroke-width="2"/>
+          <path d="M 60 440 Q 110 458 200 466" stroke="#ffb74d" stroke-width="2" fill="none" opacity="0.6"/>
+        </g>
+      </svg>
+
+      <div class="hotspot-label empty" id="hotspotLabel">
+        Tap any part of the door to learn about it.
+      </div>
+    </div>
+
+    <div class="sim-controls">
+      <button class="chip" id="toggleMode" type="button">Arm / Disarm</button>
+      <button class="chip primary" id="toggleDoor" type="button">Open / Close</button>
+      <button class="chip" id="resetSim" type="button">Reset</button>
+    </div>
+  </div>
+
+  <!-- ============ SECTION NAV ============ -->
+  <div class="section-nav">
+    <button class="section-btn active section-btn-sm" data-section="anatomy">1 · Anatomy</button>
+    <button class="section-btn section-btn-sm" data-section="normal">2 · Normal Ops</button>
+    <button class="section-btn section-btn-sm" data-section="checks">3 · Cross-checks</button>
+    <button class="section-btn section-btn-sm" data-section="emergency">4 · Emergency</button>
+    <button class="section-btn section-btn-sm" data-section="quiz">5 · Quiz</button>
+  </div>
+
+  <!-- ============ 1. ANATOMY ============ -->
+  <div id="panel-anatomy" class="section-panel active">
+    <div class="card">
+      <h2>Door Anatomy & Terminology</h2>
+      <div class="card-sub">Tap each part on the door above as you read. Mark each step done to track progress.</div>
+
+      <div class="variant-note" data-section-note="anatomy"></div>
+
+      <div class="callout info">
+        <span class="ico">ℹ️</span>
+        <div>This lesson models a typical <strong>wide-body Type A plug door</strong> (e.g. 777, A350 main cabin door). Always defer to your aircraft's CCOM / FCOM for the exact procedure.</div>
+      </div>
+
+      <div class="lesson-step" data-step="a1">
+        <div class="step-head">
+          <div class="step-num"><span>1</span></div>
+          <div class="step-title">Viewing port (window)</div>
+        </div>
+        <div class="step-body">
+          The viewing port lets you check <strong>outside conditions</strong> before operating the door: jet bridge / stairs in position, no fire or smoke, no obstructions, no people in the slide path.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="viewport">Highlight on door</button>
+          <button class="mini-btn gold" data-done="a1">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="a2">
+        <div class="step-head">
+          <div class="step-num"><span>2</span></div>
+          <div class="step-title">Door operating handle</div>
+        </div>
+        <div class="step-body">
+          The primary lever used to <strong>unlock and open</strong> the door. Travel is typically up/around through 180°. Power-assist (EPA — Emergency Power Assist) accelerates opening when armed.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="handle">Highlight on door</button>
+          <button class="mini-btn gold" data-done="a2">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="a3">
+        <div class="step-head">
+          <div class="step-num"><span>3</span></div>
+          <div class="step-title">Mode select lever</div>
+        </div>
+        <div class="step-body">
+          Selects <code>ARMED</code> (automatic — slide deploys on opening) or <code>DISARMED</code> (manual — slide stowed). Configured per the captain's command and confirmed by cross-check.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="mode">Highlight on door</button>
+          <button class="mini-btn gold" data-done="a3">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="a4">
+        <div class="step-head">
+          <div class="step-num"><span>4</span></div>
+          <div class="step-title">Indicator window</div>
+        </div>
+        <div class="step-body">
+          Visual confirmation of door state. <code>SAFE</code> (green) = closed, locked & latched. A red / striped indication = unlocked or unsafe. Confirm before takeoff and landing.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="indicator">Highlight on door</button>
+          <button class="mini-btn gold" data-done="a4">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="a5">
+        <div class="step-head">
+          <div class="step-num"><span>5</span></div>
+          <div class="step-title">Slide / raft bustle</div>
+        </div>
+        <div class="step-body">
+          Housing at the lower door containing the <strong>evacuation slide / slide-raft</strong>. When ARMED, the slide is attached to the cabin floor via the girt bar; opening the door deploys it.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="bustle">Highlight on door</button>
+          <button class="mini-btn gold" data-done="a5">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="a6">
+        <div class="step-head">
+          <div class="step-num"><span>6</span></div>
+          <div class="step-title">Girt bar</div>
+        </div>
+        <div class="step-body">
+          The red bar that anchors the slide to the cabin floor when armed. <strong>Visible only when ARMED.</strong> If you see it on a "doors disarmed" command — stop and verify.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="bustle">Show in bustle area</button>
+          <button class="mini-btn gold" data-done="a6">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="a7">
+        <div class="step-head">
+          <div class="step-num"><span>7</span></div>
+          <div class="step-title">Gust lock</div>
+        </div>
+        <div class="step-body">
+          Holds the door fully open against wind so it can't slam back. Engage on every normal open; release deliberately when closing.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="gustlock">Highlight on door</button>
+          <button class="mini-btn gold" data-done="a7">Mark done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. NORMAL OPS ============ -->
+  <div id="panel-normal" class="section-panel">
+    <div class="card">
+      <h2>Normal Operation</h2>
+      <div class="card-sub">Arm, disarm, open and close. Practise each on the door above.</div>
+
+      <div class="variant-note" data-section-note="normal"></div>
+
+      <div class="callout warn">
+        <span class="ico">⚠️</span>
+        <div>Always operate doors only on <strong>command from the flight deck</strong>, and confirm via <strong>cross-check</strong> with the opposite-side crew.</div>
+      </div>
+
+      <div class="lesson-step" data-step="n1">
+        <div class="step-head">
+          <div class="step-num"><span>1</span></div>
+          <div class="step-title">Arm slide (before pushback)</div>
+        </div>
+        <div class="step-body">
+          On the captain's command <code>"Cabin Crew — arm doors and cross-check"</code>:
+          <ul>
+            <li>Move the Mode Select lever to <strong>ARMED</strong>.</li>
+            <li>Confirm girt bar is visible and attached to the floor brackets.</li>
+            <li>Cross-check the opposite door and reply by interphone.</li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="mode">Highlight lever</button>
+          <button class="mini-btn" data-action="arm">Arm now</button>
+          <button class="mini-btn gold" data-done="n1">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="n2">
+        <div class="step-head">
+          <div class="step-num"><span>2</span></div>
+          <div class="step-title">Disarm slide (after arrival)</div>
+        </div>
+        <div class="step-body">
+          On the captain's command <code>"Cabin Crew — disarm doors and cross-check"</code>:
+          <ul>
+            <li>Move Mode Select to <strong>DISARMED</strong>.</li>
+            <li>Confirm girt bar is stowed (no red bar visible).</li>
+            <li>Cross-check and report.</li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="mode">Highlight lever</button>
+          <button class="mini-btn" data-action="disarm">Disarm now</button>
+          <button class="mini-btn gold" data-done="n2">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="n3">
+        <div class="step-head">
+          <div class="step-num"><span>3</span></div>
+          <div class="step-title">Open door — normal (disarmed)</div>
+        </div>
+        <div class="step-body">
+          Only when <strong>DISARMED</strong>:
+          <ul>
+            <li>Look through the viewing port — confirm bridge / stairs in position, area clear.</li>
+            <li>Operate the handle through its full travel.</li>
+            <li>Push the door fully open until the gust lock engages.</li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="viewport">Step 1 · viewport</button>
+          <button class="mini-btn" data-show="handle">Step 2 · handle</button>
+          <button class="mini-btn" data-action="open">Open now</button>
+          <button class="mini-btn gold" data-done="n3">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="n4">
+        <div class="step-head">
+          <div class="step-num"><span>4</span></div>
+          <div class="step-title">Close door</div>
+        </div>
+        <div class="step-body">
+          Confirm jet bridge is clear, release the gust lock, swing the door closed firmly, then move the handle through its full closing travel until the indicator reads <strong>SAFE / green</strong>.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="gustlock">Step 1 · gust lock</button>
+          <button class="mini-btn" data-show="indicator">Step 2 · indicator</button>
+          <button class="mini-btn" data-action="close">Close now</button>
+          <button class="mini-btn gold" data-done="n4">Mark done</button>
+        </div>
+      </div>
+
+      <div class="callout danger">
+        <span class="ico">⛔</span>
+        <div><strong>Never</strong> open a door in ARMED mode in normal operation. Doing so will deploy the slide — significant cost, possible injury, and aircraft delay.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. CROSS-CHECKS ============ -->
+  <div id="panel-checks" class="section-panel">
+    <div class="card">
+      <h2>Safety Checks & Cross-checks</h2>
+      <div class="card-sub">When and what to check, every flight.</div>
+
+      <div class="variant-note" data-section-note="checks"></div>
+
+      <div class="lesson-step" data-step="c1">
+        <div class="step-head">
+          <div class="step-num"><span>1</span></div>
+          <div class="step-title">Pre-flight check</div>
+        </div>
+        <div class="step-body">
+          Before boarding:
+          <ul>
+            <li>Door indicator <strong>SAFE / green</strong>.</li>
+            <li>Mode Select <strong>DISARMED</strong>.</li>
+            <li>No visible girt bar; bustle area clear of obstructions.</li>
+            <li>Viewing port unobstructed and clean.</li>
+            <li>Slide pressure gauge in green band (if visible).</li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn gold" data-done="c1">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="c2">
+        <div class="step-head">
+          <div class="step-num"><span>2</span></div>
+          <div class="step-title">Arming cross-check</div>
+        </div>
+        <div class="step-body">
+          On <code>"Arm doors and cross-check"</code>:
+          <ul>
+            <li>Set Mode Select to <strong>ARMED</strong>.</li>
+            <li>Visually confirm girt bar attached to floor.</li>
+            <li>Make eye contact with the opposite-side crew; visually confirm their lever is ARMED.</li>
+            <li>Report on interphone: <em>"Door [position] armed and cross-checked."</em></li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-action="arm">Arm now</button>
+          <button class="mini-btn gold" data-done="c2">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="c3">
+        <div class="step-head">
+          <div class="step-num"><span>3</span></div>
+          <div class="step-title">Disarming cross-check</div>
+        </div>
+        <div class="step-body">
+          On <code>"Disarm doors and cross-check"</code>, mirror the arming procedure in reverse: lever to <strong>DISARMED</strong>, girt bar stowed, cross-check opposite, report.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-action="disarm">Disarm now</button>
+          <button class="mini-btn gold" data-done="c3">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="c4">
+        <div class="step-head">
+          <div class="step-num"><span>4</span></div>
+          <div class="step-title">Before opening (after landing)</div>
+        </div>
+        <div class="step-body">
+          Even after a disarm cross-check, before pulling the handle:
+          <ul>
+            <li>Mode Select confirmed <strong>DISARMED</strong> by you, again.</li>
+            <li>Bridge / stairs confirmed in position via the viewing port.</li>
+            <li>Ground crew signal received.</li>
+          </ul>
+          Treat the disarm cross-check and the open-the-door check as two separate gates.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn gold" data-done="c4">Mark done</button>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="ico">💡</span>
+        <div><strong>Memory aid:</strong> "Mode → Indicator → Outside → Handle" — a quick four-point check every time, every door.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4. EMERGENCY ============ -->
+  <div id="panel-emergency" class="section-panel">
+    <div class="card">
+      <h2>Emergency Operation</h2>
+      <div class="card-sub">Evacuation: when and how to deploy.</div>
+
+      <div class="variant-note" data-section-note="emergency"></div>
+
+      <div class="callout danger">
+        <span class="ico">⛔</span>
+        <div>Emergency evacuation is initiated only on the captain's command, or by senior cabin crew if the cabin becomes <strong>untenable</strong> (fire, smoke, structural damage) and the flight deck is unresponsive.</div>
+      </div>
+
+      <div class="lesson-step" data-step="e1">
+        <div class="step-head">
+          <div class="step-num"><span>1</span></div>
+          <div class="step-title">Assess outside conditions</div>
+        </div>
+        <div class="step-body">
+          Before opening any door in evacuation:
+          <ul>
+            <li><strong>Look through the viewing port.</strong> Check for fire, smoke, debris, fuel, water level, obstacles.</li>
+            <li>If unsafe — <strong>redirect</strong> passengers to a usable exit. Block the unusable door and shout "Door blocked! Go to next exit!"</li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="viewport">Highlight viewport</button>
+          <button class="mini-btn gold" data-done="e1">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="e2">
+        <div class="step-head">
+          <div class="step-num"><span>2</span></div>
+          <div class="step-title">Confirm ARMED, then open</div>
+        </div>
+        <div class="step-body">
+          With outside safe:
+          <ul>
+            <li>Confirm Mode Select is <strong>ARMED</strong> — if not, arm it before pulling the handle.</li>
+            <li>Operate the handle through full travel. EPA accelerates the door.</li>
+            <li><strong>Stand clear</strong> of the door arc.</li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="mode">Mode</button>
+          <button class="mini-btn" data-show="handle">Handle</button>
+          <button class="mini-btn" data-action="arm">Arm</button>
+          <button class="mini-btn" data-action="open">Open (armed)</button>
+          <button class="mini-btn gold" data-done="e2">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="e3">
+        <div class="step-head">
+          <div class="step-num"><span>3</span></div>
+          <div class="step-title">Verify slide deployed & inflated</div>
+        </div>
+        <div class="step-body">
+          Slide must be:
+          <ul>
+            <li>Fully <strong>inflated</strong> and stable.</li>
+            <li>Reaching the ground at the correct angle.</li>
+            <li>Clear of fire / obstructions.</li>
+          </ul>
+          If <strong>not</strong> deployed: pull the manual inflation handle. If still not deployed — <strong>block the exit</strong>, redirect.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn" data-show="bustle">Slide bustle</button>
+          <button class="mini-btn gold" data-done="e3">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="e4">
+        <div class="step-head">
+          <div class="step-num"><span>4</span></div>
+          <div class="step-title">Command evacuation</div>
+        </div>
+        <div class="step-body">
+          Shouted commands, clear and continuous:
+          <ul>
+            <li><em>"Release seatbelts! Leave everything! Come this way!"</em></li>
+            <li>At the door: <em>"Jump and slide! Arms forward! Jump!"</em></li>
+            <li>Direct flow — two passengers at a time on a dual-lane slide.</li>
+          </ul>
+          <strong>Last off:</strong> grab the emergency equipment (megaphone, ELT, first aid) if safe and time permits, then evacuate.
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn gold" data-done="e4">Mark done</button>
+        </div>
+      </div>
+
+      <div class="lesson-step" data-step="e5">
+        <div class="step-head">
+          <div class="step-num"><span>5</span></div>
+          <div class="step-title">Ditching: door & slide-raft</div>
+        </div>
+        <div class="step-body">
+          Over water, the slide also serves as a <strong>raft</strong> after detachment:
+          <ul>
+            <li>Open door normally (armed) — slide-raft inflates.</li>
+            <li>Once survivors are on board, <strong>cut the mooring line</strong> with the attached hook knife.</li>
+            <li>Deploy sea anchor and locate survival kit.</li>
+          </ul>
+        </div>
+        <div class="step-actions">
+          <button class="mini-btn gold" data-done="e5">Mark done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5. QUIZ ============ -->
+  <div id="panel-quiz" class="section-panel">
+    <div class="card">
+      <h2>Knowledge Check</h2>
+      <div class="card-sub">8 questions. Answers reveal an explanation. Your score is saved.</div>
+      <div id="quizContainer"></div>
+      <div class="divider"></div>
+      <div class="progress-row">
+        <span>Quiz score</span>
+        <span><strong id="quizScore">0</strong> / <span id="quizTotal">0</span></span>
+      </div>
+      <button class="btn btn-ghost" id="resetQuiz" type="button">Reset quiz</button>
+    </div>
+  </div>
+
+  <!-- ============ PROGRESS ============ -->
+  <div class="card progress-card">
+    <div class="card-title">Your progress</div>
+    <div class="progress-row">
+      <span>Lessons completed</span>
+      <span><strong id="progDone">0</strong> / <span id="progTotal">0</span></span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progBar" style="width: 0%"></div></div>
+    <button class="btn btn-danger" id="resetProgress" type="button">Reset all progress</button>
+  </div>
+
+  <div class="disclaimer">
+    Training aid only — not a substitute for your operator's Cabin Crew Operations Manual or recurrent training. Procedures are aircraft- and operator-specific.
+  </div>
+
+</div>
+
+<script type="module">
+import { $, $$, toast } from '../../shared/ui.js';
+
+const STORAGE_KEY = 'imh.doorTraining.v1';
+
+// ===== Aircraft variants =====
+// Generic Type-A wide-body model; per-variant we override labels and add
+// type-specific notes. Procedures remain training-aid only — always defer
+// to your operator's CCOM / FCOM.
+const VARIANTS = {
+  'B777-300ER': {
+    label: 'B777-300ER',
+    mfr: 'Boeing',
+    leverArmed: 'AUTO',         // SVG label when armed
+    leverDisarmed: 'MANUAL',    // SVG label when disarmed
+    pillArmed: 'AUTOMATIC',     // status pill text
+    pillDisarmed: 'MANUAL',
+    summary: 'Mode select reads <code>AUTOMATIC</code> / <code>MANUAL</code>. AUTOMATIC = slide armed. Door operating handle rotates upward through ~180°; EPA accelerates opening when armed.',
+    notes: {
+      anatomy: '<strong>777 specifics:</strong> mode selector is the door-mounted lever labelled <code>AUTO / MANUAL</code>. Slide pressure gauge visible on the bustle face. Door 2 carries a slide-raft (overwater capability).',
+      normal: '<strong>777 wording:</strong> the commands you act on translate to <code>AUTOMATIC</code> (armed) and <code>MANUAL</code> (disarmed). Cross-check phrase: <em>"Door [position] in automatic and cross-checked."</em>',
+      checks: '<strong>777 indicator:</strong> green flag <code>SAFE</code> visible through the inspection window when latched. Re-confirm <code>MANUAL</code> before opening on arrival.',
+      emergency: '<strong>777 EPA:</strong> with the lever in AUTOMATIC, pulling the handle fires the EPA — door swings out and forward rapidly. <strong>Stand clear of the door arc.</strong>',
+    },
+  },
+  'A350-900': {
+    label: 'A350-900',
+    mfr: 'Airbus',
+    leverArmed: 'ARMED',
+    leverDisarmed: 'DISARM',
+    pillArmed: 'ARMED',
+    pillDisarmed: 'DISARMED',
+    summary: 'Mode select reads <code>ARMED</code> / <code>DISARMED</code>. Pulling the door operating handle while armed deploys the slide via a gas-actuator power-assist. Slide-raft fitted to main cabin doors.',
+    notes: {
+      anatomy: '<strong>A350 specifics:</strong> arming lever is a sliding red handle at the lower door, with a clear red girt-bar indicator. Door window is rectangular with rounded corners. All four main cabin door pairs carry slide-rafts.',
+      normal: '<strong>A350 wording:</strong> use <code>ARMED</code> / <code>DISARMED</code> verbatim. Cross-check phrase: <em>"Door [position] armed and cross-checked."</em> Door power-assist is gas-actuated — short, fast travel.',
+      checks: '<strong>A350 indicator:</strong> the slide-arming indicator strip shows <strong>red</strong> when ARMED — confirm it has dropped to <strong>green/clear</strong> after a disarm command.',
+      emergency: '<strong>A350 evac:</strong> the gas-actuator throws the door open quickly — keep body and passengers <strong>well clear of the door arc</strong>. Slide-raft inflates automatically on full opening.',
+    },
+  },
+  'A330-300': {
+    label: 'A330-300',
+    mfr: 'Airbus',
+    leverArmed: 'ARMED',
+    leverDisarmed: 'DISARM',
+    pillArmed: 'ARMED',
+    pillDisarmed: 'DISARMED',
+    summary: 'Mode select reads <code>ARMED</code> / <code>DISARMED</code>. Familiar Airbus Type-A door layout. Door 1 & Door 4 typically slide-raft; Door 2 & 3 slide-only — check your aircraft\'s configuration.',
+    notes: {
+      anatomy: '<strong>A330 specifics:</strong> red arming lever at the lower door, similar to A350. Slide-raft fitment varies by door position — confirm during your pre-flight check.',
+      normal: '<strong>A330 wording:</strong> <code>ARMED</code> / <code>DISARMED</code>. Cross-check phrase: <em>"Door [position] armed and cross-checked."</em> Slightly heavier handle action than A350.',
+      checks: '<strong>A330 indicator:</strong> red slide-arming strip visible when ARMED. Cross-check is identical to A350; the doors look very similar from inside the cabin.',
+      emergency: '<strong>A330 evac:</strong> power-assist throws door outward — stand clear. Confirm slide / slide-raft per door position. On ditching, only slide-raft doors are usable for evacuation onto water.',
+    },
+  },
+};
+const VARIANT_KEYS = Object.keys(VARIANTS);
+
+// ===== State =====
+const defaultState = {
+  done: {},                    // { stepId: true }
+  quiz: {},                    // { qIdx: chosenIdx }
+  mode: 'DISARMED',            // 'ARMED' | 'DISARMED'
+  door: 'CLOSED',              // 'CLOSED' | 'OPEN'
+  variant: 'B777-300ER',
+};
+
+const state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ...defaultState };
+    return { ...defaultState, ...JSON.parse(raw) };
+  } catch { return { ...defaultState }; }
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ===== Door simulation =====
+const modeV = $('modeV');
+const doorV = $('doorV');
+const slideV = $('slideV');
+const modePill = $('modePill');
+const doorPill = $('doorPill');
+const slidePill = $('slidePill');
+const modeSwitch = document.getElementById('modeSwitch');
+const modeSwitchLabel = document.getElementById('modeSwitchLabel');
+const modeArrow = document.getElementById('modeArrow');
+const indicatorGlow = document.getElementById('indicatorGlow');
+const indicatorText = document.getElementById('indicatorText');
+const girtBar = document.getElementById('girtBar');
+const slideGroup = document.getElementById('slideGroup');
+const doorBody = document.getElementById('doorBody');
+const handleLever = document.getElementById('handleLever');
+const hotspotLabel = $('hotspotLabel');
+
+function renderSim() {
+  const v = VARIANTS[state.variant] || VARIANTS[VARIANT_KEYS[0]];
+  // Mode
+  modeV.textContent = state.mode === 'ARMED' ? v.pillArmed : v.pillDisarmed;
+  modePill.classList.toggle('armed', state.mode === 'ARMED');
+  modePill.classList.toggle('disarmed', state.mode === 'DISARMED');
+  modeSwitch.setAttribute('fill', state.mode === 'ARMED' ? '#c62828' : '#2e7d32');
+  modeSwitchLabel.textContent = state.mode === 'ARMED' ? v.leverArmed : v.leverDisarmed;
+  modeArrow.setAttribute('stroke', state.mode === 'ARMED' ? '#c62828' : '#2e7d32');
+  modeArrow.setAttribute('transform', state.mode === 'ARMED' ? 'rotate(180 104 376)' : '');
+  girtBar.setAttribute('opacity', state.mode === 'ARMED' ? '1' : '0');
+
+  // Door
+  doorV.textContent = state.door;
+  doorPill.classList.toggle('warn', state.door === 'OPEN');
+  // visually rotate the door slightly when open
+  if (state.door === 'OPEN') {
+    doorBody.setAttribute('transform', 'translate(-30 0) rotate(-12 58 240)');
+    handleLever.setAttribute('transform', 'rotate(90 230 239)');
+  } else {
+    doorBody.setAttribute('transform', '');
+    handleLever.setAttribute('transform', '');
+  }
+
+  // Indicator
+  if (state.door === 'CLOSED') {
+    indicatorGlow.setAttribute('fill', '#2e7d32');
+    indicatorText.textContent = 'SAFE';
+  } else {
+    indicatorGlow.setAttribute('fill', '#c62828');
+    indicatorText.textContent = 'OPEN';
+  }
+
+  // Slide
+  const deployed = state.door === 'OPEN' && state.mode === 'ARMED';
+  slideV.textContent = deployed ? 'DEPLOYED' : 'STOWED';
+  slidePill.classList.toggle('warn', deployed);
+  slideGroup.setAttribute('opacity', deployed ? '1' : '0');
+}
+
+// ===== Variant selector =====
+function renderVariant() {
+  const v = VARIANTS[state.variant] || VARIANTS[VARIANT_KEYS[0]];
+  // Active button
+  $$('#variantBar .variant-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.variant === state.variant);
+  });
+  // Door-card summary
+  $('variantNote').innerHTML = `<strong>${v.label} · ${v.mfr}.</strong> ${v.summary}`;
+  // Per-section notes
+  $$('[data-section-note]').forEach((el) => {
+    const key = el.dataset.sectionNote;
+    el.innerHTML = v.notes[key] || '';
+    el.style.display = v.notes[key] ? '' : 'none';
+  });
+}
+
+$$('#variantBar .variant-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.variant = btn.dataset.variant;
+    saveState();
+    renderVariant();
+    renderSim();
+    toast(`${VARIANTS[state.variant].label} selected`);
+  });
+});
+
+// ===== Hotspot info =====
+const HOTSPOTS = {
+  viewport:  { title: 'Viewing port', body: 'Check outside conditions before any door operation.' },
+  handle:    { title: 'Operating handle', body: 'Pull through full travel to unlock & open. EPA assists when armed.' },
+  mode:      { title: 'Mode select lever', body: 'ARMED = slide will deploy on open. DISARMED = slide stowed.' },
+  indicator: { title: 'Indicator window', body: 'Green / SAFE = door fully closed, locked and latched.' },
+  bustle:    { title: 'Slide/raft bustle', body: 'Houses the evacuation slide (slide-raft on water-capable doors).' },
+  gustlock:  { title: 'Gust lock', body: 'Holds door open against wind. Engage on every normal open.' },
+};
+
+function showHotspot(key) {
+  const data = HOTSPOTS[key];
+  if (!data) return;
+  hotspotLabel.classList.remove('empty');
+  hotspotLabel.innerHTML = `<div><strong>${data.title}</strong>${data.body}</div>`;
+
+  // pulse highlight on the matching hotspot
+  $$('.hotspot').forEach((el) => el.classList.remove('highlight'));
+  const el = document.querySelector(`.hotspot[data-part="${key}"]`);
+  if (el) {
+    el.classList.add('highlight');
+    setTimeout(() => el.classList.remove('highlight'), 2200);
+  }
+}
+
+$$('.hotspot').forEach((el) => {
+  el.addEventListener('click', () => showHotspot(el.dataset.part));
+});
+
+// ===== Sim actions =====
+function setMode(m) {
+  state.mode = m;
+  renderSim(); saveState();
+}
+function setDoor(d) {
+  state.door = d;
+  renderSim(); saveState();
+}
+
+$('toggleMode').addEventListener('click', () => {
+  if (state.door === 'OPEN') {
+    toast('Close the door first');
+    return;
+  }
+  setMode(state.mode === 'ARMED' ? 'DISARMED' : 'ARMED');
+  toast(`Mode → ${state.mode}`);
+});
+
+$('toggleDoor').addEventListener('click', () => {
+  if (state.door === 'CLOSED' && state.mode === 'ARMED') {
+    if (!confirm('Door is ARMED. Opening will deploy the slide. Continue?')) return;
+    toast('⚠️ Slide deployed (simulated)');
+  }
+  setDoor(state.door === 'OPEN' ? 'CLOSED' : 'OPEN');
+});
+
+$('resetSim').addEventListener('click', () => {
+  state.mode = 'DISARMED';
+  state.door = 'CLOSED';
+  renderSim(); saveState();
+  toast('Door reset');
+});
+
+// Step action buttons (highlight / arm / open etc.)
+document.addEventListener('click', (e) => {
+  const showBtn = e.target.closest('[data-show]');
+  if (showBtn) { showHotspot(showBtn.dataset.show); return; }
+
+  const actionBtn = e.target.closest('[data-action]');
+  if (actionBtn) {
+    const a = actionBtn.dataset.action;
+    if (a === 'arm')    { if (state.door === 'OPEN') return toast('Close door first'); setMode('ARMED');    toast('Armed'); }
+    if (a === 'disarm') { if (state.door === 'OPEN') return toast('Close door first'); setMode('DISARMED'); toast('Disarmed'); }
+    if (a === 'open')   { setDoor('OPEN'); if (state.mode === 'ARMED') toast('⚠️ Slide deployed'); }
+    if (a === 'close')  { setDoor('CLOSED'); toast('Door closed'); }
+    return;
+  }
+
+  const doneBtn = e.target.closest('[data-done]');
+  if (doneBtn) {
+    const id = doneBtn.dataset.done;
+    state.done[id] = true;
+    saveState();
+    renderProgress();
+    const stepEl = doneBtn.closest('.lesson-step');
+    if (stepEl) stepEl.classList.add('done');
+    toast('Marked done');
+    return;
+  }
+});
+
+// ===== Section nav =====
+$$('.section-nav .section-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.section;
+    $$('.section-nav .section-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    $$('.section-panel').forEach((p) => p.classList.toggle('active', p.id === `panel-${target}`));
+    window.scrollTo({ top: document.querySelector('.section-nav').offsetTop - 10, behavior: 'smooth' });
+  });
+});
+
+// ===== Lesson step initial state =====
+function renderSteps() {
+  $$('.lesson-step').forEach((el) => {
+    const id = el.dataset.step;
+    if (id && state.done[id]) el.classList.add('done');
+  });
+}
+
+// ===== Progress =====
+function renderProgress() {
+  const steps = $$('.lesson-step');
+  const total = steps.length;
+  const done = steps.filter((el) => state.done[el.dataset.step]).length;
+  $('progDone').textContent = done;
+  $('progTotal').textContent = total;
+  $('progBar').style.width = total ? `${(done / total) * 100}%` : '0%';
+}
+
+$('resetProgress').addEventListener('click', () => {
+  if (!confirm('Reset all lesson progress and quiz answers?')) return;
+  state.done = {};
+  state.quiz = {};
+  saveState();
+  renderSteps();
+  renderProgress();
+  renderQuiz();
+  $$('.lesson-step').forEach((el) => el.classList.remove('done'));
+  toast('Progress reset');
+});
+
+// ===== Quiz =====
+const QUIZ = [
+  {
+    q: 'On the command "Cabin Crew — arm doors and cross-check", what is the correct first action?',
+    choices: [
+      'Open the viewing port shade and look outside.',
+      'Move the mode select lever to ARMED.',
+      'Pull the door operating handle.',
+      'Disarm the opposite door first.',
+    ],
+    answer: 1,
+    explain: 'You move your own Mode Select to ARMED first, then visually confirm girt bar, then cross-check the opposite side.',
+  },
+  {
+    q: 'What does the indicator window reading "SAFE / green" confirm?',
+    choices: [
+      'The slide is armed.',
+      'The door is locked but the slide is disarmed.',
+      'The door is fully closed, locked and latched.',
+      'There is no fire outside the aircraft.',
+    ],
+    answer: 2,
+    explain: 'SAFE / green = closed, locked, latched. It says nothing about arming or outside conditions.',
+  },
+  {
+    q: 'During an evacuation, you look through the viewing port and see fire directly below the door. You should:',
+    choices: [
+      'Open the door slowly to see better.',
+      'Disarm first, then open.',
+      'Block the exit, redirect passengers to the next usable exit.',
+      'Wait for a flight-deck instruction before doing anything.',
+    ],
+    answer: 2,
+    explain: 'Unusable exit → block it, shout "Door blocked! Go to next exit!", redirect flow. Do not open onto fire.',
+  },
+  {
+    q: 'When is the girt bar visible attached to the floor?',
+    choices: [
+      'Whenever the door is closed.',
+      'Only when the door is OPEN.',
+      'Only when the mode select is ARMED.',
+      'Only during an evacuation.',
+    ],
+    answer: 2,
+    explain: 'The girt bar drops to the floor brackets when you select ARMED. If you see it on a disarm command, stop and verify.',
+  },
+  {
+    q: 'You are about to open the door after landing. The captain has commanded "disarm and cross-check" 5 minutes ago. Before pulling the handle you should:',
+    choices: [
+      'Open immediately — the cross-check is already done.',
+      'Confirm DISARMED yourself again, confirm bridge in position via viewport, confirm ground crew signal.',
+      'Re-arm, then open.',
+      'Open only if a passenger is in a rush.',
+    ],
+    answer: 1,
+    explain: 'Treat the disarm cross-check and the open-the-door check as two separate gates. Re-verify mode, outside, ground signal every time.',
+  },
+  {
+    q: 'What is the purpose of the gust lock?',
+    choices: [
+      'Lock the slide to the door so it cannot deploy.',
+      'Hold the door fully open against wind.',
+      'Disable the operating handle on the ground.',
+      'Indicate that the door is armed.',
+    ],
+    answer: 1,
+    explain: 'The gust lock prevents wind from slamming an open door. Engage on every normal open; deliberately release before closing.',
+  },
+  {
+    q: 'During ditching, after passengers are aboard the slide-raft, what is the next action?',
+    choices: [
+      'Inflate the slide manually.',
+      'Reattach the mooring line to the aircraft.',
+      'Cut the mooring line with the hook knife.',
+      'Open the next door.',
+    ],
+    answer: 2,
+    explain: 'Cut the mooring line so the raft separates from a sinking aircraft, then deploy sea anchor and locate the survival kit.',
+  },
+  {
+    q: 'The shouted command at the door during evacuation is:',
+    choices: [
+      '"Please form an orderly line."',
+      '"Sit down and brace."',
+      '"Jump and slide! Arms forward! Jump!"',
+      '"Crouch and crawl."',
+    ],
+    answer: 2,
+    explain: 'Loud, repeated, clear: "Jump and slide! Arms forward! Jump!" — keeps flow rate up and prevents people stopping at the sill.',
+  },
+];
+
+function renderQuiz() {
+  const c = $('quizContainer');
+  c.innerHTML = '';
+  let correct = 0;
+  QUIZ.forEach((item, i) => {
+    const chosen = state.quiz[i];
+    const answered = chosen != null;
+    const isCorrect = chosen === item.answer;
+    if (answered && isCorrect) correct++;
+
+    const div = document.createElement('div');
+    div.className = 'quiz-q';
+    div.innerHTML = `
+      <div class="q-title"><span class="q-num">Q${i+1}.</span><span>${item.q}</span></div>
+      <div class="q-choices"></div>
+      <div class="quiz-explain ${answered ? 'show' : ''}">
+        <strong>${isCorrect ? '✓ Correct.' : (answered ? '✗ ' : '')}</strong> ${item.explain}
+      </div>
+    `;
+    const choicesEl = div.querySelector('.q-choices');
+    item.choices.forEach((choice, ci) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'quiz-choice';
+      btn.textContent = choice;
+      if (answered) {
+        btn.disabled = true;
+        if (ci === item.answer) btn.classList.add('correct');
+        else if (ci === chosen) btn.classList.add('wrong');
+      }
+      btn.addEventListener('click', () => {
+        if (state.quiz[i] != null) return;
+        state.quiz[i] = ci;
+        saveState();
+        renderQuiz();
+      });
+      choicesEl.appendChild(btn);
+    });
+    c.appendChild(div);
+  });
+  $('quizScore').textContent = correct;
+  $('quizTotal').textContent = QUIZ.length;
+}
+
+$('resetQuiz').addEventListener('click', () => {
+  if (!confirm('Reset quiz answers?')) return;
+  state.quiz = {};
+  saveState();
+  renderQuiz();
+  toast('Quiz reset');
+});
+
+// ===== Init =====
+renderVariant();
+renderSim();
+renderSteps();
+renderProgress();
+renderQuiz();
+</script>
+
+</body>
+</html>
