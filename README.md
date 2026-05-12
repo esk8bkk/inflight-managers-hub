@@ -1,10 +1,11 @@
 # Inflight Manager's Hub
 
-A private, offline-first Progressive Web App bundling three Thai Airways cabin-crew tools under one roof:
+A private, offline-first Progressive Web App bundling four Thai Airways cabin-crew tools under one roof:
 
 - **PA Announcements** — Welcome / Thank You / Refuel / Short Connect scripts in Thai + English
 - **Cabin Briefing** — Full pre-flight briefing sheet with crew, meals, loads, special instructions
 - **Crew Tools** — Flight-time calculator and rest-plan builder with UTC conversion
+- **Door Training** — Interactive wide-body door lesson: anatomy, normal ops, cross-checks, emergency, quiz
 
 All three plugins share a single **flight context** (flight number, captain, route, times…) stored in `localStorage`, so entering data in any plugin auto-fills the others. No backend, no sync, no login — everything lives on your device.
 
@@ -36,7 +37,8 @@ Inflight Managers Hub/
 └── plugins/
     ├── announcement/       Plugin 1: PA Announcements
     ├── briefing/           Plugin 2: Cabin Briefing
-    └── crew-tools/         Plugin 3: Flight Time + Rest Plan
+    ├── crew-tools/         Plugin 3: Flight Time + Rest Plan
+    └── door-training/      Plugin 4: Interactive Door Training
 ```
 
 ---
