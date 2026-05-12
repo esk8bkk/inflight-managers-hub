@@ -21,6 +21,65 @@
     background: linear-gradient(180deg, #faf8fd 0%, #ffffff 100%);
   }
 
+  /* Variant selector */
+  .variant-bar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--input-bg);
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+  .variant-btn {
+    flex: 1;
+    padding: 8px 6px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+  }
+  .variant-btn .mfr {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-subtle);
+    margin-top: 1px;
+    text-transform: uppercase;
+  }
+  .variant-btn.active {
+    background: var(--tg-purple);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(74, 20, 140, 0.3);
+  }
+  .variant-btn.active .mfr { color: rgba(255,255,255,0.7); }
+
+  .variant-note {
+    padding: 10px 12px;
+    background: rgba(74, 20, 140, 0.06);
+    border-left: 3px solid var(--tg-purple);
+    border-radius: 0 8px 8px 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .variant-note strong { color: var(--tg-purple); font-weight: 700; }
+  .variant-note code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(74, 20, 140, 0.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
   .status-bar {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -366,6 +425,14 @@
   <div class="card door-sim-card">
     <div class="card-title">Interactive Door</div>
 
+    <div class="variant-bar" id="variantBar">
+      <button class="variant-btn" data-variant="B777-300ER" type="button">B777-300ER<span class="mfr">Boeing</span></button>
+      <button class="variant-btn" data-variant="A350-900" type="button">A350-900<span class="mfr">Airbus</span></button>
+      <button class="variant-btn" data-variant="A330-300" type="button">A330-300<span class="mfr">Airbus</span></button>
+    </div>
+
+    <div class="variant-note" id="variantNote"></div>
+
     <div class="status-bar">
       <div class="status-pill disarmed" id="modePill">
         <span class="k">Mode</span>
@@ -507,6 +574,8 @@
       <h2>Door Anatomy & Terminology</h2>
       <div class="card-sub">Tap each part on the door above as you read. Mark each step done to track progress.</div>
 
+      <div class="variant-note" data-section-note="anatomy"></div>
+
       <div class="callout info">
         <span class="ico">ℹ️</span>
         <div>This lesson models a typical <strong>wide-body Type A plug door</strong> (e.g. 777, A350 main cabin door). Always defer to your aircraft's CCOM / FCOM for the exact procedure.</div>
@@ -618,6 +687,8 @@
       <h2>Normal Operation</h2>
       <div class="card-sub">Arm, disarm, open and close. Practise each on the door above.</div>
 
+      <div class="variant-note" data-section-note="normal"></div>
+
       <div class="callout warn">
         <span class="ico">⚠️</span>
         <div>Always operate doors only on <strong>command from the flight deck</strong>, and confirm via <strong>cross-check</strong> with the opposite-side crew.</div>
@@ -713,6 +784,8 @@
       <h2>Safety Checks & Cross-checks</h2>
       <div class="card-sub">When and what to check, every flight.</div>
 
+      <div class="variant-note" data-section-note="checks"></div>
+
       <div class="lesson-step" data-step="c1">
         <div class="step-head">
           <div class="step-num"><span>1</span></div>
@@ -798,6 +871,8 @@
     <div class="card">
       <h2>Emergency Operation</h2>
       <div class="card-sub">Evacuation: when and how to deploy.</div>
+
+      <div class="variant-note" data-section-note="emergency"></div>
 
       <div class="callout danger">
         <span class="ico">⛔</span>
@@ -940,12 +1015,66 @@ import { $, $$, toast } from '../../shared/ui.js';
 
 const STORAGE_KEY = 'imh.doorTraining.v1';
 
+// ===== Aircraft variants =====
+// Generic Type-A wide-body model; per-variant we override labels and add
+// type-specific notes. Procedures remain training-aid only — always defer
+// to your operator's CCOM / FCOM.
+const VARIANTS = {
+  'B777-300ER': {
+    label: 'B777-300ER',
+    mfr: 'Boeing',
+    leverArmed: 'AUTO',         // SVG label when armed
+    leverDisarmed: 'MANUAL',    // SVG label when disarmed
+    pillArmed: 'AUTOMATIC',     // status pill text
+    pillDisarmed: 'MANUAL',
+    summary: 'Mode select reads <code>AUTOMATIC</code> / <code>MANUAL</code>. AUTOMATIC = slide armed. Door operating handle rotates upward through ~180°; EPA accelerates opening when armed.',
+    notes: {
+      anatomy: '<strong>777 specifics:</strong> mode selector is the door-mounted lever labelled <code>AUTO / MANUAL</code>. Slide pressure gauge visible on the bustle face. Door 2 carries a slide-raft (overwater capability).',
+      normal: '<strong>777 wording:</strong> the commands you act on translate to <code>AUTOMATIC</code> (armed) and <code>MANUAL</code> (disarmed). Cross-check phrase: <em>"Door [position] in automatic and cross-checked."</em>',
+      checks: '<strong>777 indicator:</strong> green flag <code>SAFE</code> visible through the inspection window when latched. Re-confirm <code>MANUAL</code> before opening on arrival.',
+      emergency: '<strong>777 EPA:</strong> with the lever in AUTOMATIC, pulling the handle fires the EPA — door swings out and forward rapidly. <strong>Stand clear of the door arc.</strong>',
+    },
+  },
+  'A350-900': {
+    label: 'A350-900',
+    mfr: 'Airbus',
+    leverArmed: 'ARMED',
+    leverDisarmed: 'DISARM',
+    pillArmed: 'ARMED',
+    pillDisarmed: 'DISARMED',
+    summary: 'Mode select reads <code>ARMED</code> / <code>DISARMED</code>. Pulling the door operating handle while armed deploys the slide via a gas-actuator power-assist. Slide-raft fitted to main cabin doors.',
+    notes: {
+      anatomy: '<strong>A350 specifics:</strong> arming lever is a sliding red handle at the lower door, with a clear red girt-bar indicator. Door window is rectangular with rounded corners. All four main cabin door pairs carry slide-rafts.',
+      normal: '<strong>A350 wording:</strong> use <code>ARMED</code> / <code>DISARMED</code> verbatim. Cross-check phrase: <em>"Door [position] armed and cross-checked."</em> Door power-assist is gas-actuated — short, fast travel.',
+      checks: '<strong>A350 indicator:</strong> the slide-arming indicator strip shows <strong>red</strong> when ARMED — confirm it has dropped to <strong>green/clear</strong> after a disarm command.',
+      emergency: '<strong>A350 evac:</strong> the gas-actuator throws the door open quickly — keep body and passengers <strong>well clear of the door arc</strong>. Slide-raft inflates automatically on full opening.',
+    },
+  },
+  'A330-300': {
+    label: 'A330-300',
+    mfr: 'Airbus',
+    leverArmed: 'ARMED',
+    leverDisarmed: 'DISARM',
+    pillArmed: 'ARMED',
+    pillDisarmed: 'DISARMED',
+    summary: 'Mode select reads <code>ARMED</code> / <code>DISARMED</code>. Familiar Airbus Type-A door layout. Door 1 & Door 4 typically slide-raft; Door 2 & 3 slide-only — check your aircraft\'s configuration.',
+    notes: {
+      anatomy: '<strong>A330 specifics:</strong> red arming lever at the lower door, similar to A350. Slide-raft fitment varies by door position — confirm during your pre-flight check.',
+      normal: '<strong>A330 wording:</strong> <code>ARMED</code> / <code>DISARMED</code>. Cross-check phrase: <em>"Door [position] armed and cross-checked."</em> Slightly heavier handle action than A350.',
+      checks: '<strong>A330 indicator:</strong> red slide-arming strip visible when ARMED. Cross-check is identical to A350; the doors look very similar from inside the cabin.',
+      emergency: '<strong>A330 evac:</strong> power-assist throws door outward — stand clear. Confirm slide / slide-raft per door position. On ditching, only slide-raft doors are usable for evacuation onto water.',
+    },
+  },
+};
+const VARIANT_KEYS = Object.keys(VARIANTS);
+
 // ===== State =====
 const defaultState = {
-  done: {},            // { stepId: true }
-  quiz: {},            // { qIdx: chosenIdx }
-  mode: 'DISARMED',    // 'ARMED' | 'DISARMED'
-  door: 'CLOSED',      // 'CLOSED' | 'OPEN'
+  done: {},                    // { stepId: true }
+  quiz: {},                    // { qIdx: chosenIdx }
+  mode: 'DISARMED',            // 'ARMED' | 'DISARMED'
+  door: 'CLOSED',              // 'CLOSED' | 'OPEN'
+  variant: 'B777-300ER',
 };
 
 const state = loadState();
@@ -980,12 +1109,13 @@ const handleLever = document.getElementById('handleLever');
 const hotspotLabel = $('hotspotLabel');
 
 function renderSim() {
+  const v = VARIANTS[state.variant] || VARIANTS[VARIANT_KEYS[0]];
   // Mode
-  modeV.textContent = state.mode;
+  modeV.textContent = state.mode === 'ARMED' ? v.pillArmed : v.pillDisarmed;
   modePill.classList.toggle('armed', state.mode === 'ARMED');
   modePill.classList.toggle('disarmed', state.mode === 'DISARMED');
   modeSwitch.setAttribute('fill', state.mode === 'ARMED' ? '#c62828' : '#2e7d32');
-  modeSwitchLabel.textContent = state.mode === 'ARMED' ? 'ARMED' : 'DISARM';
+  modeSwitchLabel.textContent = state.mode === 'ARMED' ? v.leverArmed : v.leverDisarmed;
   modeArrow.setAttribute('stroke', state.mode === 'ARMED' ? '#c62828' : '#2e7d32');
   modeArrow.setAttribute('transform', state.mode === 'ARMED' ? 'rotate(180 104 376)' : '');
   girtBar.setAttribute('opacity', state.mode === 'ARMED' ? '1' : '0');
@@ -1017,6 +1147,33 @@ function renderSim() {
   slidePill.classList.toggle('warn', deployed);
   slideGroup.setAttribute('opacity', deployed ? '1' : '0');
 }
+
+// ===== Variant selector =====
+function renderVariant() {
+  const v = VARIANTS[state.variant] || VARIANTS[VARIANT_KEYS[0]];
+  // Active button
+  $$('#variantBar .variant-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.variant === state.variant);
+  });
+  // Door-card summary
+  $('variantNote').innerHTML = `<strong>${v.label} · ${v.mfr}.</strong> ${v.summary}`;
+  // Per-section notes
+  $$('[data-section-note]').forEach((el) => {
+    const key = el.dataset.sectionNote;
+    el.innerHTML = v.notes[key] || '';
+    el.style.display = v.notes[key] ? '' : 'none';
+  });
+}
+
+$$('#variantBar .variant-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.variant = btn.dataset.variant;
+    saveState();
+    renderVariant();
+    renderSim();
+    toast(`${VARIANTS[state.variant].label} selected`);
+  });
+});
 
 // ===== Hotspot info =====
 const HOTSPOTS = {
@@ -1294,6 +1451,7 @@ $('resetQuiz').addEventListener('click', () => {
 });
 
 // ===== Init =====
+renderVariant();
 renderSim();
 renderSteps();
 renderProgress();
