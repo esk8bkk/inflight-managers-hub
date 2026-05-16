@@ -328,7 +328,9 @@ const STORAGE_KEY = 'blackboard:doc:v1';
 const MAX_PAGES = 50;
 
 const canvas = document.getElementById('bbCanvas');
-const ctx = canvas.getContext('2d');
+// desynchronized: true puts the canvas on its own compositor layer,
+// dramatically lowering Apple Pencil → screen latency on iPad Safari.
+const ctx = canvas.getContext('2d', { desynchronized: true, alpha: true });
 const stage = document.getElementById('bbStage');
 const stats = document.getElementById('bbStats');
 const modePill = document.getElementById('bbModePill');
@@ -347,16 +349,30 @@ const state = {
   current: null,     // stroke being drawn
   activePointerId: null,
   dpr: Math.max(1, window.devicePixelRatio || 1),
+  strokeRect: null,  // cached canvas rect for the active stroke
+  rawUpdateSeen: false, // browser supports pointerrawupdate → skip pointermove
 };
 state.undone = state.pages.map(() => []);
 
 /* ---------- Persistence ---------- */
+let saveScheduled = false;
 function save() {
-  try {
-    const data = { pages: state.pages, page: state.page };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    // localStorage may be full — silently ignore, user can save PNG
+  if (saveScheduled) return;
+  saveScheduled = true;
+  const run = () => {
+    saveScheduled = false;
+    try {
+      const data = { pages: state.pages, page: state.page };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      // localStorage may be full — silently ignore, user can save PNG
+    }
+  };
+  // Defer off the input/render thread so lifting the Pencil doesn't hitch.
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(run, { timeout: 1000 });
+  } else {
+    setTimeout(run, 50);
   }
 }
 function load() {
@@ -496,7 +512,7 @@ function pointAt(e, rect) {
   return {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top,
-    p: e.pressure > 0 ? e.pressure : (e.pointerType === 'pen' ? 0.5 : 0.5),
+    p: e.pressure > 0 ? e.pressure : 0.5,
   };
 }
 
@@ -515,13 +531,14 @@ canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId);
   state.drawing = true;
   state.activePointerId = e.pointerId;
+  // Cache rect for the stroke — avoids forced layout on every pointermove.
+  state.strokeRect = canvas.getBoundingClientRect();
 
-  const rect = canvas.getBoundingClientRect();
   state.current = {
     tool: state.tool,
     color: state.color,
     size: state.size,
-    points: [pointAt(e, rect)],
+    points: [pointAt(e, state.strokeRect)],
   };
   // commit to page so live drawing IS the final drawing
   state.pages[state.page].push(state.current);
@@ -533,7 +550,7 @@ canvas.addEventListener('pointerdown', (e) => {
 function extend(e) {
   if (!state.drawing || e.pointerId !== state.activePointerId) return;
   if (!shouldAccept(e)) return;
-  const rect = canvas.getBoundingClientRect();
+  const rect = state.strokeRect;
   const events = (e.getCoalescedEvents && e.getCoalescedEvents().length)
     ? e.getCoalescedEvents()
     : [e];
@@ -573,7 +590,16 @@ function drawTail(s, tailCount) {
   ctx.globalCompositeOperation = 'source-over';
 }
 
-canvas.addEventListener('pointermove', extend);
+// Prefer pointerrawupdate (fires between frames, lowest latency on iPad).
+// Fall back to pointermove on browsers that don't expose it.
+canvas.addEventListener('pointerrawupdate', (e) => {
+  state.rawUpdateSeen = true;
+  extend(e);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (state.rawUpdateSeen) return; // already handled by pointerrawupdate
+  extend(e);
+});
 
 function endStroke(e) {
   if (!state.drawing) return;
@@ -581,6 +607,7 @@ function endStroke(e) {
   state.drawing = false;
   state.activePointerId = null;
   state.current = null;
+  state.strokeRect = null;
   save();
   updateStats();
 }
