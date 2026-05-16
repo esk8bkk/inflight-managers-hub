@@ -55,6 +55,12 @@
       "short_name": "Tools",
       "url": "./plugins/crew-tools/",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Blackboard",
+      "short_name": "Board",
+      "url": "./plugins/blackboard/",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

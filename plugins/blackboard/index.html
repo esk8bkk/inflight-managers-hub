@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0e1a16">
+<title>Blackboard · IM Hub</title>
+<link rel="manifest" href="../../manifest.json">
+<link rel="icon" type="image/svg+xml" href="../../icons/icon.svg">
+<link rel="apple-touch-icon" href="../../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: #0e1a16;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+  }
+
+  /* ===== Toolbar ===== */
+  .bb-toolbar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    padding-left: calc(14px + env(safe-area-inset-left));
+    padding-right: calc(14px + env(safe-area-inset-right));
+    background: linear-gradient(180deg, #1a2622 0%, #131e1a 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .bb-toolbar::-webkit-scrollbar { display: none; }
+
+  .bb-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .bb-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+
+  .bb-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 9px;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .bb-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .bb-btn:active { background: rgba(255,255,255,0.12); }
+  .bb-btn.active {
+    background: var(--tg-gold);
+    color: #1a1028;
+  }
+  .bb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .bb-btn svg { width: 20px; height: 20px; }
+
+  .bb-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s, border-color 0.15s;
+    padding: 0;
+  }
+  .bb-swatch:hover { transform: scale(1.1); }
+  .bb-swatch.active {
+    border-color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.25);
+  }
+
+  .bb-size-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    flex-shrink: 0;
+  }
+  .bb-size-wrap label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+  }
+  .bb-size {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    outline: none;
+  }
+  .bb-size::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--tg-gold);
+    cursor: pointer;
+  }
+  .bb-size::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--tg-gold);
+    cursor: pointer;
+    border: none;
+  }
+
+  .bb-pages {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding-left: 8px;
+  }
+  .bb-page-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    min-width: 44px;
+    text-align: center;
+  }
+
+  /* ===== Canvas stage ===== */
+  .bb-stage {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at center, #1a2a24 0%, #0e1a16 100%);
+  }
+  .bb-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .bb-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+    display: block;
+  }
+
+  /* Pen-only badge */
+  .bb-mode-pill {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.55);
+    color: rgba(255,255,255,0.85);
+    padding: 5px 12px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(8px);
+  }
+  .bb-mode-pill.show { opacity: 1; }
+
+  /* Stats bottom-right */
+  .bb-stats {
+    position: absolute;
+    right: 14px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    pointer-events: none;
+    letter-spacing: 0.5px;
+  }
+
+  /* Compact toolbar on narrow screens */
+  @media (max-width: 640px) {
+    .bb-toolbar { gap: 6px; padding: 8px 10px; padding-top: calc(8px + env(safe-area-inset-top)); }
+    .bb-btn { width: 34px; height: 34px; }
+    .bb-swatch { width: 22px; height: 22px; }
+    .bb-size-wrap { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bb-toolbar">
+  <a class="bb-back" href="../../">← Hub</a>
+
+  <div class="bb-group" role="group" aria-label="Tools">
+    <button class="bb-btn" data-tool="pen" title="Pen" aria-label="Pen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+    </button>
+    <button class="bb-btn" data-tool="highlight" title="Highlighter" aria-label="Highlighter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l-6 6v3h3l6-6"/><path d="M14 4l6 6-7 7-6-6z"/></svg>
+    </button>
+    <button class="bb-btn" data-tool="eraser" title="Eraser" aria-label="Eraser">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H7L3 16a2 2 0 010-3l9-9a2 2 0 013 0l6 6a2 2 0 010 3L13 20"/><path d="M16 16L8 8"/></svg>
+    </button>
+  </div>
+
+  <div class="bb-group" role="group" aria-label="Color">
+    <button class="bb-swatch active" data-color="#ffffff" style="background:#ffffff" title="White"></button>
+    <button class="bb-swatch" data-color="#c9a84c" style="background:#c9a84c" title="Gold"></button>
+    <button class="bb-swatch" data-color="#ff6b6b" style="background:#ff6b6b" title="Red"></button>
+    <button class="bb-swatch" data-color="#6bcf7f" style="background:#6bcf7f" title="Green"></button>
+    <button class="bb-swatch" data-color="#5dade2" style="background:#5dade2" title="Blue"></button>
+    <button class="bb-swatch" data-color="#bb86fc" style="background:#bb86fc" title="Purple"></button>
+  </div>
+
+  <div class="bb-size-wrap">
+    <label for="bbSize">Size</label>
+    <input class="bb-size" id="bbSize" type="range" min="1" max="16" step="0.5" value="3">
+  </div>
+
+  <div class="bb-group" role="group" aria-label="History">
+    <button class="bb-btn" id="bbUndo" title="Undo" aria-label="Undo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+    </button>
+    <button class="bb-btn" id="bbRedo" title="Redo" aria-label="Redo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0115-6.7L21 13"/></svg>
+    </button>
+    <button class="bb-btn" id="bbClear" title="Clear page" aria-label="Clear page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+    </button>
+  </div>
+
+  <div class="bb-group" role="group" aria-label="More">
+    <button class="bb-btn" id="bbPenOnly" title="Pen-only mode (palm rejection)" aria-label="Pen-only mode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2l8 8-12 12H2v-8z"/><path d="M9 7l8 8"/></svg>
+    </button>
+    <button class="bb-btn" id="bbSave" title="Save PNG" aria-label="Save PNG">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+    </button>
+  </div>
+
+  <div class="bb-pages">
+    <button class="bb-btn" id="bbPrev" title="Previous page" aria-label="Previous page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="bb-page-label" id="bbPageLabel">1 / 1</span>
+    <button class="bb-btn" id="bbNext" title="Next page" aria-label="Next page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button class="bb-btn" id="bbAddPage" title="Add page" aria-label="Add page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="bb-stage" id="bbStage">
+  <canvas class="bb-canvas" id="bbCanvas"></canvas>
+  <div class="bb-mode-pill" id="bbModePill">Pen only · palm ignored</div>
+  <div class="bb-stats" id="bbStats"></div>
+</div>
+
+<script type="module">
+import { toast } from '../../shared/ui.js';
+import { registerSW } from '../../shared/ui.js';
+
+registerSW('../../sw.js', '../../');
+
+/* ===================================================================
+   Blackboard — vector strokes on a single canvas.
+   Strokes: { tool, color, size, points: [{x,y,p}] }
+   Pages:   array of stroke arrays
+   Persisted to localStorage under 'blackboard:doc:v1'
+   =================================================================== */
+
+const STORAGE_KEY = 'blackboard:doc:v1';
+const MAX_PAGES = 50;
+
+const canvas = document.getElementById('bbCanvas');
+const ctx = canvas.getContext('2d');
+const stage = document.getElementById('bbStage');
+const stats = document.getElementById('bbStats');
+const modePill = document.getElementById('bbModePill');
+const sizeInput = document.getElementById('bbSize');
+const pageLabel = document.getElementById('bbPageLabel');
+
+const state = {
+  tool: 'pen',
+  color: '#ffffff',
+  size: 3,
+  penOnly: false,
+  pages: [[]],       // each page = array of strokes
+  page: 0,
+  undone: [],        // per-page redo stacks (mirrors structure of pages)
+  drawing: false,
+  current: null,     // stroke being drawn
+  activePointerId: null,
+  dpr: Math.max(1, window.devicePixelRatio || 1),
+};
+state.undone = state.pages.map(() => []);
+
+/* ---------- Persistence ---------- */
+function save() {
+  try {
+    const data = { pages: state.pages, page: state.page };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    // localStorage may be full — silently ignore, user can save PNG
+  }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Array.isArray(data.pages) && data.pages.length) {
+      state.pages = data.pages;
+      state.page = Math.min(data.page ?? 0, data.pages.length - 1);
+      state.undone = state.pages.map(() => []);
+    }
+  } catch (e) { /* ignore */ }
+}
+load();
+
+/* ---------- Canvas sizing ---------- */
+function resizeCanvas() {
+  const rect = stage.getBoundingClientRect();
+  state.dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(rect.width * state.dpr);
+  canvas.height = Math.floor(rect.height * state.dpr);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+  redrawAll();
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+
+/* ---------- Drawing primitives ---------- */
+function strokeStyle(s) {
+  if (s.tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.globalAlpha = 1;
+  } else if (s.tool === 'highlight') {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = s.color;
+    ctx.globalAlpha = 0.28;
+  } else {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = s.color;
+    ctx.globalAlpha = 1;
+  }
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+
+function drawStroke(s) {
+  const pts = s.points;
+  if (!pts || pts.length === 0) return;
+  strokeStyle(s);
+
+  if (pts.length === 1) {
+    const p = pts[0];
+    const w = effectiveWidth(s, p.p);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, w / 2, 0, Math.PI * 2);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
+    return;
+  }
+
+  // Variable-width pen: draw each segment with its own lineWidth so
+  // pressure changes visibly. Quadratic-smoothed through midpoints.
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    const wA = effectiveWidth(s, a.p);
+    const wB = effectiveWidth(s, b.p);
+    ctx.lineWidth = (wA + wB) / 2;
+    ctx.beginPath();
+    if (i === 1) {
+      ctx.moveTo(a.x, a.y);
+    } else {
+      const prev = pts[i - 2];
+      ctx.moveTo((prev.x + a.x) / 2, (prev.y + a.y) / 2);
+    }
+    if (i === pts.length - 1) {
+      ctx.lineTo(b.x, b.y);
+    } else {
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      ctx.quadraticCurveTo(a.x, a.y, mx, my);
+    }
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function effectiveWidth(s, pressure) {
+  const base = s.size;
+  if (s.tool === 'highlight') return base * 4;          // chunky marker
+  if (s.tool === 'eraser')    return Math.max(8, base * 4);
+  // Pen: pressure scales width from 0.3x → 1.4x of base
+  const p = pressure == null ? 0.5 : pressure;
+  return base * (0.3 + 1.1 * p);
+}
+
+function redrawAll() {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+  const page = state.pages[state.page] || [];
+  for (const s of page) drawStroke(s);
+  updateStats();
+}
+
+function updateStats() {
+  const page = state.pages[state.page] || [];
+  const total = page.reduce((n, s) => n + s.points.length, 0);
+  stats.textContent = `${page.length} strokes · ${total} pts`;
+  pageLabel.textContent = `${state.page + 1} / ${state.pages.length}`;
+  document.getElementById('bbPrev').disabled = state.page === 0;
+  document.getElementById('bbNext').disabled = state.page >= state.pages.length - 1;
+  document.getElementById('bbUndo').disabled = (state.pages[state.page] || []).length === 0;
+  document.getElementById('bbRedo').disabled = (state.undone[state.page] || []).length === 0;
+}
+
+/* ---------- Pointer handling ---------- */
+function pointAt(e, rect) {
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+    p: e.pressure > 0 ? e.pressure : (e.pointerType === 'pen' ? 0.5 : 0.5),
+  };
+}
+
+function shouldAccept(e) {
+  if (e.pointerType === 'pen') return true;
+  if (e.pointerType === 'mouse') return true;
+  // touch
+  return !state.penOnly;
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (!shouldAccept(e)) return;
+  if (state.drawing) return;
+
+  e.preventDefault();
+  canvas.setPointerCapture(e.pointerId);
+  state.drawing = true;
+  state.activePointerId = e.pointerId;
+
+  const rect = canvas.getBoundingClientRect();
+  state.current = {
+    tool: state.tool,
+    color: state.color,
+    size: state.size,
+    points: [pointAt(e, rect)],
+  };
+  // commit to page so live drawing IS the final drawing
+  state.pages[state.page].push(state.current);
+  state.undone[state.page] = [];
+  drawStroke(state.current);
+  updateStats();
+});
+
+function extend(e) {
+  if (!state.drawing || e.pointerId !== state.activePointerId) return;
+  if (!shouldAccept(e)) return;
+  const rect = canvas.getBoundingClientRect();
+  const events = (e.getCoalescedEvents && e.getCoalescedEvents().length)
+    ? e.getCoalescedEvents()
+    : [e];
+  const pts = state.current.points;
+  for (const ev of events) {
+    pts.push(pointAt(ev, rect));
+  }
+  // Draw only the tail segments — much cheaper than full redraw.
+  drawTail(state.current, events.length + 1);
+}
+
+function drawTail(s, tailCount) {
+  const pts = s.points;
+  const start = Math.max(1, pts.length - tailCount);
+  strokeStyle(s);
+  for (let i = start; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    ctx.lineWidth = (effectiveWidth(s, a.p) + effectiveWidth(s, b.p)) / 2;
+    ctx.beginPath();
+    if (i === 1) {
+      ctx.moveTo(a.x, a.y);
+    } else {
+      const prev = pts[i - 2];
+      ctx.moveTo((prev.x + a.x) / 2, (prev.y + a.y) / 2);
+    }
+    if (i === pts.length - 1) {
+      ctx.lineTo(b.x, b.y);
+    } else {
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      ctx.quadraticCurveTo(a.x, a.y, mx, my);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+canvas.addEventListener('pointermove', extend);
+
+function endStroke(e) {
+  if (!state.drawing) return;
+  if (e && e.pointerId !== state.activePointerId) return;
+  state.drawing = false;
+  state.activePointerId = null;
+  state.current = null;
+  save();
+  updateStats();
+}
+canvas.addEventListener('pointerup', endStroke);
+canvas.addEventListener('pointercancel', endStroke);
+
+/* ---------- Toolbar wiring ---------- */
+function setTool(t) {
+  state.tool = t;
+  document.querySelectorAll('[data-tool]').forEach((b) => {
+    b.classList.toggle('active', b.dataset.tool === t);
+  });
+}
+function setColor(c) {
+  state.color = c;
+  document.querySelectorAll('[data-color]').forEach((b) => {
+    b.classList.toggle('active', b.dataset.color === c);
+  });
+}
+
+document.querySelectorAll('[data-tool]').forEach((b) => {
+  b.addEventListener('click', () => setTool(b.dataset.tool));
+});
+document.querySelectorAll('[data-color]').forEach((b) => {
+  b.addEventListener('click', () => setColor(b.dataset.color));
+});
+setTool('pen');
+
+sizeInput.addEventListener('input', () => {
+  state.size = parseFloat(sizeInput.value);
+});
+
+document.getElementById('bbUndo').addEventListener('click', () => {
+  const page = state.pages[state.page];
+  if (!page.length) return;
+  state.undone[state.page].push(page.pop());
+  redrawAll();
+  save();
+});
+document.getElementById('bbRedo').addEventListener('click', () => {
+  const stack = state.undone[state.page];
+  if (!stack.length) return;
+  state.pages[state.page].push(stack.pop());
+  redrawAll();
+  save();
+});
+document.getElementById('bbClear').addEventListener('click', () => {
+  if (!state.pages[state.page].length) return;
+  if (!confirm('Clear this page?')) return;
+  state.pages[state.page] = [];
+  state.undone[state.page] = [];
+  redrawAll();
+  save();
+  toast('Page cleared');
+});
+
+document.getElementById('bbPenOnly').addEventListener('click', () => {
+  state.penOnly = !state.penOnly;
+  document.getElementById('bbPenOnly').classList.toggle('active', state.penOnly);
+  modePill.classList.toggle('show', state.penOnly);
+  if (state.penOnly) {
+    setTimeout(() => modePill.classList.remove('show'), 1800);
+  }
+  toast(state.penOnly ? 'Pen only — palm ignored' : 'All input accepted');
+});
+
+document.getElementById('bbSave').addEventListener('click', () => {
+  // Render onto an opaque background so the PNG isn't transparent.
+  const out = document.createElement('canvas');
+  out.width = canvas.width;
+  out.height = canvas.height;
+  const octx = out.getContext('2d');
+  octx.fillStyle = '#0e1a16';
+  octx.fillRect(0, 0, out.width, out.height);
+  octx.drawImage(canvas, 0, 0);
+  const url = out.toDataURL('image/png');
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  a.download = `blackboard-p${state.page + 1}-${stamp}.png`;
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('PNG saved');
+});
+
+document.getElementById('bbPrev').addEventListener('click', () => {
+  if (state.page === 0) return;
+  state.page--;
+  redrawAll();
+  save();
+});
+document.getElementById('bbNext').addEventListener('click', () => {
+  if (state.page >= state.pages.length - 1) return;
+  state.page++;
+  redrawAll();
+  save();
+});
+document.getElementById('bbAddPage').addEventListener('click', () => {
+  if (state.pages.length >= MAX_PAGES) {
+    toast(`Max ${MAX_PAGES} pages`);
+    return;
+  }
+  state.pages.push([]);
+  state.undone.push([]);
+  state.page = state.pages.length - 1;
+  redrawAll();
+  save();
+});
+
+/* ---------- Keyboard shortcuts (handy on iPad with Magic Keyboard) ---------- */
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key === 'z' && !e.shiftKey) { e.preventDefault(); document.getElementById('bbUndo').click(); }
+  else if (mod && (e.key === 'Z' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); document.getElementById('bbRedo').click(); }
+  else if (e.key === '1') setTool('pen');
+  else if (e.key === '2') setTool('highlight');
+  else if (e.key === '3') setTool('eraser');
+  else if (e.key === '[') document.getElementById('bbPrev').click();
+  else if (e.key === ']') document.getElementById('bbNext').click();
+});
+
+/* ---------- Boot ---------- */
+sizeInput.value = state.size;
+resizeCanvas();
+updateStats();
+</script>
+
+</body>
+</html>
