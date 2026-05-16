@@ -4,7 +4,7 @@
    Bump CACHE_VERSION to force an update of all cached files.
    ============================================================ */
 
-const CACHE_VERSION = 'imh-v1.0.5';
+const CACHE_VERSION = 'imh-v1.1.0';
 const CACHE_NAME = `imh-cache-${CACHE_VERSION}`;
 
 // Core shell — precached on install
@@ -23,6 +23,7 @@ const PRECACHE_URLS = [
   './plugins/briefing/index.html',
   './plugins/crew-tools/index.html',
   './plugins/door-training/index.html',
+  './plugins/blackboard/index.html',
 ];
 
 // Google Fonts — cached at runtime (first online load → offline forever)
