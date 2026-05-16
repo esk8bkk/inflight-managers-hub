@@ -175,18 +175,26 @@
     flex: 1;
     position: relative;
     overflow: hidden;
+    /* Chalkboard slate: warm-cool slate base, faint eraser sweeps,
+       soft smudge highlights to break up the flat field. */
     background:
-      radial-gradient(ellipse at center, #1a2a24 0%, #0e1a16 100%);
-  }
-  .bb-stage::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
+      /* faint horizontal eraser sweeps */
+      repeating-linear-gradient(180deg,
+        rgba(220, 230, 225, 0.018) 0px,
+        rgba(220, 230, 225, 0.028) 40px,
+        rgba(220, 230, 225, 0.012) 90px,
+        transparent 140px),
+      /* subtle vertical chalk-dust streaks */
+      repeating-linear-gradient(90deg,
+        rgba(255, 255, 255, 0.010) 0px,
+        rgba(255, 255, 255, 0.018) 60px,
+        transparent 130px),
+      /* big soft eraser blooms */
+      radial-gradient(ellipse 65% 45% at 28% 25%, rgba(240,245,235,0.04), transparent 70%),
+      radial-gradient(ellipse 55% 60% at 78% 65%, rgba(240,245,235,0.035), transparent 70%),
+      radial-gradient(ellipse 40% 35% at 50% 90%, rgba(240,245,235,0.03), transparent 75%),
+      /* base slate */
+      linear-gradient(160deg, #2a3833 0%, #1a2622 45%, #131c1a 100%);
   }
   .bb-canvas {
     position: absolute;
@@ -257,12 +265,12 @@
   </div>
 
   <div class="bb-group" role="group" aria-label="Color">
-    <button class="bb-swatch active" data-color="#ffffff" style="background:#ffffff" title="White"></button>
-    <button class="bb-swatch" data-color="#c9a84c" style="background:#c9a84c" title="Gold"></button>
-    <button class="bb-swatch" data-color="#ff6b6b" style="background:#ff6b6b" title="Red"></button>
-    <button class="bb-swatch" data-color="#6bcf7f" style="background:#6bcf7f" title="Green"></button>
-    <button class="bb-swatch" data-color="#5dade2" style="background:#5dade2" title="Blue"></button>
-    <button class="bb-swatch" data-color="#bb86fc" style="background:#bb86fc" title="Purple"></button>
+    <button class="bb-swatch active" data-color="#f5f4ec" style="background:#f5f4ec" title="Chalk"></button>
+    <button class="bb-swatch" data-color="#f0d878" style="background:#f0d878" title="Yellow chalk"></button>
+    <button class="bb-swatch" data-color="#f08a8a" style="background:#f08a8a" title="Red chalk"></button>
+    <button class="bb-swatch" data-color="#a8e0a0" style="background:#a8e0a0" title="Green chalk"></button>
+    <button class="bb-swatch" data-color="#9bc8e8" style="background:#9bc8e8" title="Blue chalk"></button>
+    <button class="bb-swatch" data-color="#d4b8f0" style="background:#d4b8f0" title="Purple chalk"></button>
   </div>
 
   <div class="bb-size-wrap">
@@ -339,7 +347,7 @@ const pageLabel = document.getElementById('bbPageLabel');
 
 const state = {
   tool: 'pen',
-  color: '#ffffff',
+  color: '#f5f4ec',
   size: 3,
   penOnly: false,
   pages: [[]],       // each page = array of strokes
@@ -414,6 +422,49 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', resizeCanvas);
 }
 
+/* ---------- Chalk texture ----------
+   Per-color noise patterns make pen strokes look like chalk:
+   variable opacity along the stroke, small gaps inside the line,
+   roughened edges. The pattern lives in canvas coordinates so it
+   tiles deterministically — redraws are identical to the original.
+*/
+const chalkPatternCache = new Map();
+
+function makeChalkPattern(color) {
+  const SIZE = 240;
+  const c = document.createElement('canvas');
+  c.width = c.height = SIZE;
+  const cx = c.getContext('2d');
+  cx.fillStyle = color;
+  // Dense overlapping circles with variable opacity → chalky body
+  for (let i = 0; i < 8000; i++) {
+    cx.globalAlpha = 0.25 + Math.random() * 0.55;
+    const r = 0.3 + Math.random() * 1.4;
+    cx.beginPath();
+    cx.arc(Math.random() * SIZE, Math.random() * SIZE, r, 0, Math.PI * 2);
+    cx.fill();
+  }
+  // A few darker "gaps" to suggest chalk skipping
+  cx.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 600; i++) {
+    cx.globalAlpha = 0.2 + Math.random() * 0.5;
+    cx.beginPath();
+    cx.arc(Math.random() * SIZE, Math.random() * SIZE, 0.4 + Math.random() * 1.1, 0, Math.PI * 2);
+    cx.fill();
+  }
+  return c;
+}
+
+function chalkPatternFor(color) {
+  let p = chalkPatternCache.get(color);
+  if (!p) {
+    const tex = makeChalkPattern(color);
+    p = ctx.createPattern(tex, 'repeat');
+    chalkPatternCache.set(color, p);
+  }
+  return p;
+}
+
 /* ---------- Drawing primitives ---------- */
 function strokeStyle(s) {
   if (s.tool === 'eraser') {
@@ -425,9 +476,10 @@ function strokeStyle(s) {
     ctx.strokeStyle = s.color;
     ctx.globalAlpha = 0.28;
   } else {
+    // Chalk: pattern fill + slight transparency for that dusty look.
     ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = s.color;
-    ctx.globalAlpha = 1;
+    ctx.strokeStyle = chalkPatternFor(s.color);
+    ctx.globalAlpha = 0.92;
   }
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
